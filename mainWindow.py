@@ -9,7 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
-f = Figure(figsize=(5,4), dpi=100)
+f = Figure(figsize=(5,1), dpi=100)
 a = f.add_subplot(111)
 t = arange(0.0,3.0,0.01)
 s = sin(2*pi*t)
@@ -32,48 +32,29 @@ class MainWindow(Frame):
         self.parent.config(menu=menuBar)
         #mainFrame = Frame(self.parent, width=1500, height=800, bg="#555")
         #mainFrame.pack()
-        topFrame = Frame(self.parent)
-        tfl = Frame(topFrame)
-        tfr = Frame(topFrame)
-        bottomFrame = Frame(self.parent)
-        bfl = Frame(bottomFrame)
-        bfr = Frame(bottomFrame)
 
-        canvas = FigureCanvasTkAgg(f, tfl)
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, tfl)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        self.frameList = []
+        for i in range(3):
+            self.frameList.append(Frame(self.parent))
+        secondaryFrameList = []
+        for item in self.frameList:
+            secondaryFrameList.append(Frame(item))
+            secondaryFrameList.append(Frame(item))
+        self.objectList = []
+        for item in secondaryFrameList:
+            self.objectList.append((item, FigureCanvasTkAgg(f, item)))
 
-        canvas1 = FigureCanvasTkAgg(f, tfr)
-        canvas1.show()
-        canvas1.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        toolbar1 = NavigationToolbar2TkAgg(canvas1, tfr)
-        toolbar1.update()
-        canvas1._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        for i, item in enumerate(self.frameList):
+            self.drawLabel(item, "Sensor {}".format(i+1))
 
-        canvas2 = FigureCanvasTkAgg(f, bfl)
-        canvas2.show()
-        canvas2.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        toolbar2 = NavigationToolbar2TkAgg(canvas2, bfl)
-        toolbar2.update()
-        canvas2._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        for item in self.objectList:
+            self.drawGraph(item[1], item[0])
 
-        canvas3 = FigureCanvasTkAgg(f, bfr)
-        canvas3.show()
-        canvas3.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        toolbar3 = NavigationToolbar2TkAgg(canvas3, bfr)
-        toolbar3.update()
-        canvas3._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        for i, item in enumerate(self.objectList):
+            self.packer(item, i)
 
-        tfl.pack(side=LEFT, fill=BOTH, expand=1)
-        tfr.pack(side=RIGHT, fill=BOTH, expand=1)
-        topFrame.pack(side=TOP, fill=BOTH, expand=1)
-        bfl.pack(side=LEFT, fill=BOTH, expand=1)
-        bfr.pack(side=RIGHT, fill=BOTH, expand=1)
-        bottomFrame.pack(side=TOP, fill=BOTH, expand=1)
-
+        for item in self.frameList:
+            item.pack(side=TOP, fill=BOTH, expand=1)
 
         fileMenu = Menu(menuBar)
         fileMenu.config(tearoff=0)
@@ -94,6 +75,29 @@ class MainWindow(Frame):
         helpMenu.config(tearoff=0)
         helpMenu.add_command(label='Help', command=self.help)
         menuBar.add_cascade(label='Help', menu=helpMenu)
+
+    def packer(self, item, i):
+        labelList = ['Acceleration', 'Velocity'] * 6
+        packList = [LEFT, RIGHT] * 6
+
+        label = Label(item[0], text=labelList[i])
+        label.pack(side=TOP, fill=BOTH, expand=0)
+        item[0].pack(side=packList[i], fill=BOTH, expand=1)
+
+    def drawLabel(self, box, text):
+        topLabel = Label(box, text=text)
+        topLabel.pack(side=TOP, fill=BOTH, expand=0)
+
+    def drawGraph(self, canvas, box):
+        canvas.show()
+        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().bind("<Button-1>", self.expand)
+        #toolbar = NavigationToolbar2TkAgg(canvas, box)
+        #toolbar.update()
+        canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
+    def expand(self):
+        pass
 
     #File Menu
     def importData(self):
