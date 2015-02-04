@@ -8,6 +8,7 @@ from numpy import arange, sin, pi
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
+import functools
 
 f = Figure(figsize=(5,1), dpi=100)
 a = f.add_subplot(111)
@@ -26,12 +27,12 @@ class MainWindow(Frame):
 
     def initUI(self):
         self.parent.title("Excel-o-meter")
+        self.parent.geometry("1500x900")
 
         menuBar = Menu(self.parent)
         menuBar.config(tearoff=0)
         self.parent.config(menu=menuBar)
-        #mainFrame = Frame(self.parent, width=1500, height=800, bg="#555")
-        #mainFrame.pack()
+        #self.singleGraph = Frame(self.parent)
 
         self.frameList = []
         for i in range(3):
@@ -40,15 +41,18 @@ class MainWindow(Frame):
         for item in self.frameList:
             secondaryFrameList.append(Frame(item))
             secondaryFrameList.append(Frame(item))
+
         self.objectList = []
-        for item in secondaryFrameList:
-            self.objectList.append((item, FigureCanvasTkAgg(f, item)))
+        labelList = ['Acceleration', 'Velocity'] * 6
+        for i, item in enumerate(secondaryFrameList):
+            self.objectList.append((item, FigureCanvasTkAgg(f, item), f, Label(item, text=labelList[i])))
 
         for i, item in enumerate(self.frameList):
             self.drawLabel(item, "Sensor {}".format(i+1))
 
-        for item in self.objectList:
-            self.drawGraph(item[1], item[0])
+        self.bindList=[]
+        for i, item in enumerate(self.objectList):
+            self.bindList.append(self.drawGraph(item, i))
 
         for i, item in enumerate(self.objectList):
             self.packer(item, i)
@@ -77,26 +81,98 @@ class MainWindow(Frame):
         menuBar.add_cascade(label='Help', menu=helpMenu)
 
     def packer(self, item, i):
-        labelList = ['Acceleration', 'Velocity'] * 6
         packList = [LEFT, RIGHT] * 6
 
-        label = Label(item[0], text=labelList[i])
-        label.pack(side=TOP, fill=BOTH, expand=0)
+        item[3].pack(side=TOP, fill=BOTH, expand=0)
         item[0].pack(side=packList[i], fill=BOTH, expand=1)
+
+    def unpacker(self, singleGraph):
+        frameListNum = [0, 0, 1, 1, 2, 2]
+        x = 0
+
+        for i, item in enumerate(self.objectList):
+            if item != singleGraph:
+                item[0].pack_forget()
+                item[3].pack_forget()
+            else:
+                x = frameListNum[i]
+
+        return x
 
     def drawLabel(self, box, text):
         topLabel = Label(box, text=text)
         topLabel.pack(side=TOP, fill=BOTH, expand=0)
 
-    def drawGraph(self, canvas, box):
+    def drawGraph(self, item, i):
+        canvas = item[1]
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        canvas.get_tk_widget().bind("<Button-1>", self.expand)
-        #toolbar = NavigationToolbar2TkAgg(canvas, box)
-        #toolbar.update()
+        bindID = canvas.get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=item, itemNum=i))
+        canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        return bindID
+
+    def expand(self, event, item, itemNum):
+        canvas = item[1]
+        graphFrame = item[0]
+        self.buttonFrame = Frame(graphFrame)
+        middleButtons = Frame(self.buttonFrame)
+
+        frameListNum = self.unpacker(item)
+        for i, item in enumerate(self.frameList):
+            if i != frameListNum:
+                item.pack_forget()
+        canvas._tkcanvas.pack_forget()
+        canvas.get_tk_widget().unbind("<Button-1>", self.bindList[itemNum])
+
+        if itemNum != 0:
+            prevGButton = Button(self.buttonFrame, text="Previous Graph", command=functools.partial(self.changeGraph, i=itemNum-1, graphFrame=graphFrame, frameNum=frameListNum, itemNum=itemNum))
+            if itemNum != 1:
+                prevSButton = Button(self.buttonFrame, text="Previous Sensor", command=functools.partial(self.changeGraph, i=itemNum-2, graphFrame=graphFrame, frameNum=frameListNum, itemNum=itemNum))
+                prevSButton.pack(side=LEFT)
+            prevGButton.pack(side=LEFT)
+        if itemNum != 5:
+            nextGButton = Button(self.buttonFrame, text="Next Graph", command=functools.partial(self.changeGraph, i=itemNum+1, graphFrame=graphFrame, frameNum=frameListNum, itemNum=itemNum))
+            if itemNum != 4:
+                nextSButton = Button(self.buttonFrame, text="Next Sensor", command=functools.partial(self.changeGraph, i=itemNum+2, graphFrame=graphFrame, frameNum=frameListNum, itemNum=itemNum))
+                nextSButton.pack(side=RIGHT)
+            nextGButton.pack(side=RIGHT)
+
+        backButton = Button(middleButtons, text="Full View", command=functools.partial(self.fullView, i=itemNum, graphFrame=graphFrame, frameNum=frameListNum))
+        backButton.pack(side=LEFT)
+        filterButton = Button(middleButtons, text="Apply Filter", command=functools.partial(self.filterGraph, item=item))
+        filterButton.pack(side=RIGHT)
+
+        middleButtons.pack(side=TOP)
+        self.buttonFrame.pack(side=TOP, fill=BOTH)
+
+        self.toolbar = NavigationToolbar2TkAgg(canvas, graphFrame)
+        self.toolbar.update()
         canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
-    def expand(self):
+    def changeGraph(self, i, graphFrame, frameNum, itemNum):
+        self.fullView(itemNum, graphFrame, frameNum)
+        self.expand(0,self.objectList[i], i)
+
+
+    def fullView(self, i, graphFrame, frameNum):
+
+        self.buttonFrame.pack_forget()
+        self.toolbar.destroy()
+        graphFrame.pack_forget()
+        self.bindList[i] = self.objectList[i][1].get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=self.objectList[i], itemNum=i))
+        self.frameList[frameNum].pack_forget()
+        for item in self.objectList:
+            item[3].pack_forget()
+
+        for i, item in enumerate(self.objectList):
+            self.packer(item, i)
+
+        for item in self.frameList:
+            item.pack(side=TOP, fill=BOTH, expand=1)
+
+
+
+    def filterGraph(self, item):
         pass
 
     #File Menu
