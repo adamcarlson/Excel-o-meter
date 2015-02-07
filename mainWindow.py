@@ -10,12 +10,18 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import functools
 
-f = Figure(figsize=(5,1), dpi=100)
+f = Figure(figsize=(5,1), dpi=100, frameon=False)
+g = Figure(figsize=(5,1), dpi=100, frameon=False)
 a = f.add_subplot(111)
+b = g.add_subplot(111)
+
 t = arange(0.0,3.0,0.01)
 s = sin(2*pi*t)
 
 a.plot(t,s)
+b.plot(t,s)
+
+plotList = [f,f,f,f,f,g]
 
 
 class MainWindow(Frame):
@@ -45,7 +51,7 @@ class MainWindow(Frame):
         self.objectList = []
         labelList = ['Acceleration', 'Velocity'] * 6
         for i, item in enumerate(secondaryFrameList):
-            self.objectList.append((item, FigureCanvasTkAgg(f, item), f, Label(item, text=labelList[i])))
+            self.objectList.append((item, FigureCanvasTkAgg(plotList[i], item), plotList[i], Label(item, text=labelList[i])))
 
         for i, item in enumerate(self.frameList):
             self.drawLabel(item, "Sensor {}".format(i+1))
@@ -107,7 +113,7 @@ class MainWindow(Frame):
         canvas = item[1]
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        bindID = canvas.get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=item, itemNum=i))
+        bindID = canvas.get_tk_widget().bind("<Button-2>", functools.partial(self.expand, item=item, itemNum=i))
         canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
         return bindID
 
@@ -122,7 +128,7 @@ class MainWindow(Frame):
             if i != frameListNum:
                 item.pack_forget()
         canvas._tkcanvas.pack_forget()
-        canvas.get_tk_widget().unbind("<Button-1>", self.bindList[itemNum])
+        canvas.get_tk_widget().unbind("<Button-2>", self.bindList[itemNum])
 
         if itemNum != 0:
             prevGButton = Button(self.buttonFrame, text="Previous Graph", command=functools.partial(self.changeGraph, i=itemNum-1, graphFrame=graphFrame, frameNum=frameListNum, itemNum=itemNum))
@@ -157,7 +163,11 @@ class MainWindow(Frame):
     def fullView(self, i, graphFrame, frameNum):
 
         self.buttonFrame.pack_forget()
+        self.objectList[i][1]._tkcanvas.pack_forget()
         self.toolbar.destroy()
+        self.objectList[i][1]._tkcanvas.toolbar = None
+        self.objectList[i][1]._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
         graphFrame.pack_forget()
         self.bindList[i] = self.objectList[i][1].get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=self.objectList[i], itemNum=i))
         self.frameList[frameNum].pack_forget()
