@@ -1,10 +1,12 @@
 __author__ = 'Adam Carlson'
 
+import os
 import matplotlib
 matplotlib.use('TkAgg')
 
 from tkinter import *
-from numpy import arange, sin, pi, array
+from numpy import arange, sin, pi, dtype, fromfile
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
 import matplotlib.pyplot as plt
@@ -13,26 +15,44 @@ import math
 import classes
 
 # Constants:
-FRAME, CANVAS, FIGURE, TOOLBAR = 0, 1, 2, 3 
+FRAME, CANVAS, FIGURE, TOOLBAR = 0, 1, 2, 3
+
+
+
+classes.importer("sensor1.txt")
+
+
+record_dtype = dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
+x = fromfile('s1.dat', dtype=record_dtype)
+x_data = x['x_data']
+y_data = x['y_data']
+z_data = x['z_data']
 
 # Test graphs:
 plotList = []
 for x in range(3):
     plotList.append([])
 
-    t = arange(0.0,3.0,0.01)
+    t = arange(0.0,(np.size(x_data)*0.01),0.01)
     s = sin(2*pi*t)
     for i in range(6):
         plotList[x].append(plt.figure(figsize=(1,1), dpi=100, frameon=False))
         plot = plotList[x][i].add_subplot(111)
-        plot.set_xlabel(r'$milliseconds$')
+        plot.set_xlabel(r'$samples$')
         if i % 2 == 0:
             plot.set_title('Acceleration')
             plot.set_ylabel(r'$m/s^2$')
         else:
             plot.set_title('Velocity')
             plot.set_ylabel(r'$m/s$')
-        plot.plot(t,s + i)
+        if( i == 0):
+            plot.plot(t, x_data)
+        elif( i == 2):
+            plot.plot(t, y_data)
+        elif( i == 4):
+            plot.plot(t, z_data)
+        else:
+            plot.plot(t,s + i)
 
 class MainWindow(Frame):
     def __init__(self, parent):
@@ -142,9 +162,9 @@ class MainWindow(Frame):
     def hHelp(self):
         pass
 
-class SensorView(Frame):
+class SensorView(object):
     def __init__(self, parent, sensor):
-        Frame.__init__(self, parent)
+        #Frame.__init__(self, parent)
         self.parent = parent
         self.sensor = sensor
         self.init()

@@ -1,5 +1,7 @@
 __author__ = 'Adam Carlson'
 
+import os
+from subprocess import Popen
 import matplotlib
 matplotlib.use('TkAgg')
 
@@ -109,3 +111,8 @@ class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
             self.releasePan()
         if self.pButton == 'zoom':
             self.releaseZoom()
+
+class importer(object):
+    def __init__(self, filename):
+        self.process = Popen([r"eom.exe", "{}".format(filename)])
+        self.process.wait()
