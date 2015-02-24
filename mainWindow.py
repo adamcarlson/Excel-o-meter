@@ -1,6 +1,6 @@
 __author__ = 'Adam Carlson'
 
-import os
+import sys
 import matplotlib
 matplotlib.use('TkAgg')
 
@@ -9,7 +9,9 @@ from numpy import arange, sin, pi, dtype, fromfile
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backend_bases import key_press_handler
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import matplotlib.animation as ani
 import functools
 import math
 import classes
@@ -28,12 +30,22 @@ x_data = x['x_data']
 y_data = x['y_data']
 z_data = x['z_data']
 
+t = arange(0.0,(np.size(x_data)*0.01),0.01)
+figX = plt.figure(dpi=100, frameon=False)
+ax = Axes3D(figX)
+#ax.plot(x_data, y_data, z_data)
+ay = Axes3D(figX)
+az = Axes3D(figX)
+ax.plot(x_data, t)
+ay.plot(t, y_data)
+az.plot(t, t, z_data)
+
 # Test graphs:
 plotList = []
 for x in range(3):
     plotList.append([])
 
-    t = arange(0.0,(np.size(x_data)*0.01),0.01)
+    t = arange(0.0,(np.size(x_data)*0.01), 0.01)
     s = sin(2*pi*t)
     for i in range(6):
         plotList[x].append(plt.figure(figsize=(1,1), dpi=100, frameon=False))
@@ -54,26 +66,31 @@ for x in range(3):
         else:
             plot.plot(t,s + i)
 
-class MainWindow(Frame):
-    def __init__(self, parent):
-        Frame.__init__(self, parent)
-        self.parent = parent
+class MainWindow(Tk):
+    def __init__(self):
+        Tk.__init__(self)
         self.initUI()
         self.isSensorView = 0
+        self.protocol("WM_DELETE_WINDOW", self.fOnExit)
 
 
     def initUI(self):
-        self.parent.title("Excel-o-meter")
-        self.parent.geometry("1500x900")
-        self.mainFrame = Frame(self.parent)
+        self.title("Excel-o-meter")
+        self.geometry("1500x900")
+        self.mainFrame = Frame(self)
         self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
 
-        menuBar = Menu(self.parent)
+        menuBar = Menu(self)
         menuBar.config(tearoff=0)
-        self.parent.config(menu=menuBar)
+        self.config(menu=menuBar)
 
         sensorList = [Frame(self.mainFrame) for i in range(3)]
         for i, item in enumerate(sensorList):
+            if i == 0:
+                canvas = classes.ActuallyWorkingFigureCanvas(figX, item)
+                canvas.show()
+                canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
             topLabel = Label(item, text="Sensor {}".format(i+1))
             topLabel.pack(side=TOP, fill=X, expand=1)
 
@@ -110,13 +127,13 @@ class MainWindow(Frame):
 
     def sensorSelect(self, sensor):
         self.mainFrame.pack_forget()
-        self.sensorViewFrame = Frame(self.parent)
+        self.sensorViewFrame = Frame(self)
         self.sensorViewFrame.pack(side=TOP, fill=BOTH, expand=1)
         SensorView(self.sensorViewFrame, sensor)
         self.isSensorView = 1
 
     def homeView(self):
-        if self.isSensorView:
+        if self.isSensorView == 1:
             self.sensorViewFrame.pack_forget()
             self.sensorViewFrame.destroy()
             self.isSensorView = 0
@@ -136,7 +153,7 @@ class MainWindow(Frame):
         pass
 
     def fOnExit(self):
-        self.quit()
+        sys.exit()
 
     #Edit Menu
     def eFilter(self):
@@ -162,9 +179,9 @@ class MainWindow(Frame):
     def hHelp(self):
         pass
 
-class SensorView(object):
+class SensorView(Frame):
     def __init__(self, parent, sensor):
-        #Frame.__init__(self, parent)
+        Frame.__init__(self, parent)
         self.parent = parent
         self.sensor = sensor
         self.init()
@@ -293,6 +310,5 @@ class SensorView(object):
 
 
 if __name__ == '__main__':
-    root = Tk()
-    app = MainWindow(root)
-    root.mainloop()
+    app = MainWindow()
+    app.mainloop()
