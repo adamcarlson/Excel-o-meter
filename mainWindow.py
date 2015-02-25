@@ -5,6 +5,9 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 from tkinter import *
+
+from tkinter.filedialog import askopenfilename
+
 from numpy import arange, sin, pi, dtype, fromfile
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -18,84 +21,31 @@ import classes
 
 # Constants:
 FRAME, CANVAS, FIGURE, TOOLBAR = 0, 1, 2, 3
+gX, gY, gZ = 0, 1, 2
 
 
-
-classes.importer("sensor1.txt")
-
-
-record_dtype = dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
-x = fromfile('s1.dat', dtype=record_dtype)
-x_data = x['x_data']
-y_data = x['y_data']
-z_data = x['z_data']
-
-t = arange(0.0,(np.size(x_data)*0.01),0.01)
-figX = plt.figure(dpi=100, frameon=False)
-ax = Axes3D(figX)
-#ax.plot(x_data, y_data, z_data)
-ay = Axes3D(figX)
-az = Axes3D(figX)
-ax.plot(x_data, t)
-ay.plot(t, y_data)
-az.plot(t, t, z_data)
-
-# Test graphs:
-plotList = []
-for x in range(3):
-    plotList.append([])
-
-    t = arange(0.0,(np.size(x_data)*0.01), 0.01)
-    s = sin(2*pi*t)
-    for i in range(6):
-        plotList[x].append(plt.figure(figsize=(1,1), dpi=100, frameon=False))
-        plot = plotList[x][i].add_subplot(111)
-        plot.set_xlabel(r'$samples$')
-        if i % 2 == 0:
-            plot.set_title('Acceleration')
-            plot.set_ylabel(r'$m/s^2$')
-        else:
-            plot.set_title('Velocity')
-            plot.set_ylabel(r'$m/s$')
-        if( i == 0):
-            plot.plot(t, x_data)
-        elif( i == 2):
-            plot.plot(t, y_data)
-        elif( i == 4):
-            plot.plot(t, z_data)
-        else:
-            plot.plot(t,s + i)
-
-class MainWindow(Tk):
+class WelcomeWindow(Tk):
     def __init__(self):
         Tk.__init__(self)
-        self.initUI()
         self.isSensorView = 0
         self.protocol("WM_DELETE_WINDOW", self.fOnExit)
-
+        #self.makeMenuBar()
+        self.initUI()
+        #MainWindow(self)
 
     def initUI(self):
         self.title("Excel-o-meter")
-        self.geometry("1500x900")
+        self.geometry("500x500")
         self.mainFrame = Frame(self)
         self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
+        importButton = Button(self.mainFrame, text="IMPORT", command=self.fImportData)
+        importButton.pack(side=TOP, fill=BOTH, expand=1)
 
+
+    def makeMenuBar(self):
         menuBar = Menu(self)
         menuBar.config(tearoff=0)
         self.config(menu=menuBar)
-
-        sensorList = [Frame(self.mainFrame) for i in range(3)]
-        for i, item in enumerate(sensorList):
-            if i == 0:
-                canvas = classes.ActuallyWorkingFigureCanvas(figX, item)
-                canvas.show()
-                canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-            topLabel = Label(item, text="Sensor {}".format(i+1))
-            topLabel.pack(side=TOP, fill=X, expand=1)
-
-            item.pack(side=LEFT, fill=BOTH, expand=1)
-
 
         fileMenu = Menu(menuBar)
         fileMenu.config(tearoff=0)
@@ -125,11 +75,61 @@ class MainWindow(Tk):
         helpMenu.add_command(label='Help', command=self.hHelp)
         menuBar.add_cascade(label='Help', menu=helpMenu)
 
-    def sensorSelect(self, sensor):
+
+    #File Menu
+    def fImportData(self):
+        classes.importer(askopenfilename())
+
+        record_dtype = dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
+
+        self.s1Data = fromfile('s1.dat', dtype=record_dtype)
+        #self.s2Data = fromfile('s2.dat', dtype=record_dtype)
+        #self.s3Data = fromfile('s3.dat', dtype=record_dtype)
+
+        self.s1DList = [self.s1Data['x_data'], self.s1Data['y_data'], self.s1Data['z_data']]
+        #self.s2DList = [self.s2Data['x_data'], self.s2Data['y_data'], self.s2Data['z_data']]
+        #self.s3DList = [self.s3Data['x_data'], self.s3Data['y_data'], self.s3Data['z_data']]
+
+        t = arange(0.0,(np.size(self.s1DList[0])*0.01),0.01)
+        self.s4dList = [plt.figure(dpi=100, frameon=False) for i in range(3)]
+        for item in self.s4dList:
+            plot = Axes3D(item)
+            plot.plot(self.s1DList[gX], self.s1DList[gY], self.s1DList[gZ])
+
+        # Test graphs:
+        self.plotList = []
+        for i in range(3):
+            self.plotList.append([])
+
+            s = sin(2*pi*t)
+            for j in range(6):
+                self.plotList[i].append(plt.figure(figsize=(1,1), dpi=100, frameon=False))
+                plot = self.plotList[i][j].add_subplot(111)
+                plot.set_xlabel(r'$samples$')
+                if j % 2 == 0:
+                    plot.set_title('Acceleration')
+                    plot.set_ylabel(r'$m/s^2$')
+                else:
+                    plot.set_title('Velocity')
+                    plot.set_ylabel(r'$m/s$')
+                if( j == 0):
+                    plot.plot(t, self.s1DList[gX])
+                elif( j == 2):
+                    plot.plot(t, self.s1DList[gY])
+                elif( j == 4):
+                    plot.plot(t, self.s1DList[gZ])
+                else:
+                    plot.plot(t,s)
+
+        self.makeMenuBar()
         self.mainFrame.pack_forget()
+        self.mainWindow = MainWindow(self, self.s4dList, self.plotList)
+
+    def sensorSelect(self, sensor):
+        self.mainWindow.mainFrame.pack_forget()
         self.sensorViewFrame = Frame(self)
         self.sensorViewFrame.pack(side=TOP, fill=BOTH, expand=1)
-        SensorView(self.sensorViewFrame, sensor)
+        SensorView(self.sensorViewFrame, sensor, self.plotList)
         self.isSensorView = 1
 
     def homeView(self):
@@ -137,11 +137,7 @@ class MainWindow(Tk):
             self.sensorViewFrame.pack_forget()
             self.sensorViewFrame.destroy()
             self.isSensorView = 0
-        self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
-
-    #File Menu
-    def fImportData(self):
-        pass
+        self.mainWindow.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
 
     def fOpen(self):
         pass
@@ -179,11 +175,40 @@ class MainWindow(Tk):
     def hHelp(self):
         pass
 
+class MainWindow(Frame):
+    def __init__(self, parent, s4dList, plotList):
+        Frame.__init__(self, parent)
+        self.s4dList = s4dList
+        self.plotList = plotList
+        self.parent = parent
+        self.initUI()
+
+
+    def initUI(self):
+        self.parent.title("Excel-o-meter")
+        self.parent.geometry("1500x900")
+        self.mainFrame = Frame(self.parent)
+        self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
+
+        sensorList = [Frame(self.mainFrame) for i in range(3)]
+        for i, item in enumerate(sensorList):
+            if i == 0:
+                canvas = classes.ActuallyWorkingFigureCanvas(self.s4dList[0], item)
+                canvas.show()
+                canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+
+            topLabel = Label(item, text="Sensor {}".format(i+1))
+            topLabel.pack(side=TOP, fill=X, expand=1)
+
+            item.pack(side=LEFT, fill=BOTH, expand=1)
+
+
 class SensorView(Frame):
-    def __init__(self, parent, sensor):
+    def __init__(self, parent, sensor, plotList):
         Frame.__init__(self, parent)
         self.parent = parent
         self.sensor = sensor
+        self.plotList = plotList
         self.init()
 
     def init(self):
@@ -198,8 +223,8 @@ class SensorView(Frame):
 
         self.objectList = []
         for i, item in enumerate(secondaryFrameList):
-            canvas = classes.ActuallyWorkingFigureCanvas(plotList[self.sensor][i], item)
-            self.objectList.append((item, canvas, plotList[self.sensor][i], classes.ActuallyWorkingToolbar(canvas, item)))
+            canvas = classes.ActuallyWorkingFigureCanvas(self.plotList[self.sensor][i], item)
+            self.objectList.append((item, canvas, self.plotList[self.sensor][i], classes.ActuallyWorkingToolbar(canvas, item)))
             self.objectList[i][TOOLBAR].update()
 
         axisList = ['X','Y','Z']
@@ -310,5 +335,5 @@ class SensorView(Frame):
 
 
 if __name__ == '__main__':
-    app = MainWindow()
+    app = WelcomeWindow()
     app.mainloop()
