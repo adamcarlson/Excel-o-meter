@@ -41,7 +41,9 @@ class WelcomeWindow(Tk):
         self.mainFrame = Frame(self)
         self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
         importButton = Button(self.mainFrame, text="IMPORT", command=self.fImportData)
+        openButton = Button(self.mainFrame, text="OPEN", command=self.fOpen)
         importButton.pack(side=TOP, fill=BOTH, expand=1)
+        openButton.pack(side=TOP, fill=BOTH, expand=1)
 
 
     def makeMenuBar(self):
@@ -80,7 +82,7 @@ class WelcomeWindow(Tk):
 
     #File Menu
     def fImportData(self):
-        sensorData.loadData()
+        sensorData.importData()
         self.makeMenuBar()
         self.mainFrame.pack_forget()
         self.mainWindow = MainWindow(self)
@@ -100,13 +102,16 @@ class WelcomeWindow(Tk):
         self.mainWindow.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
 
     def fOpen(self):
-        pass
+        sensorData.newData(classes.openSaveFile())
+        self.makeMenuBar()
+        self.mainFrame.pack_forget()
+        self.mainWindow = MainWindow(self)
 
     def fSaveAs(self):
-        pass
+        classes.saveFile(sensorData)
 
     def fSave(self):
-        pass
+        classes.saveFile(sensorData)
 
     def fOnExit(self):
         sys.exit()

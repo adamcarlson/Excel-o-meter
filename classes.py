@@ -1,8 +1,11 @@
 __author__ = 'Adam Carlson'
 
 import os
+import pickle
 from subprocess import Popen
+import tkinter.filedialog as fd
 import matplotlib
+import sensorData
 matplotlib.use('TkAgg')
 
 from tkinter import *
@@ -116,3 +119,23 @@ class importer(object):
     def __init__(self, filename):
         self.process = Popen([r"eom.exe", "{}".format(filename)])
         self.process.wait()
+
+def openSaveFile(filename=''):
+    if filename == '':
+        file = open(fd.askopenfilename(), 'rb')
+    else:
+        file = open(filename, 'rb')
+
+    sensorData = pickle.load(file)
+    file.close()
+    return sensorData
+
+def saveFile(data, filename=''):
+    if filename == '':
+        file = open(fd.asksaveasfilename(), 'wb')
+    else:
+        file = open(filename, 'wb')
+
+    pickle.dump(data, file)
+    file.close()
+    return

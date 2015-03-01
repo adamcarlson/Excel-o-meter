@@ -16,11 +16,9 @@ class SensorData(object):
     def __init__(self, Hz):
         self.intervals = 1/Hz
 
-    def loadData(self):
+    def importData(self):
         self.filename = fd.askopenfilename()
-        if self.filename.split('.')[-1] == 'esf':
-            pass # figure out regular save file stuff
-        elif self.filename.split('.')[-1] == 'sac':
+        if self.filename.split('.')[-1] == 'sac':
             classes.importer(self.filename)
             record_dtype = np.dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
             self.s1Data = np.fromfile('s1.dat', dtype=record_dtype)
@@ -41,6 +39,18 @@ class SensorData(object):
             #self.s2DPlotList = self.generatePlots(self.s2DList)
             #self.s3DPlotList = self.generatePlots(self.s3DList)
             self.SmallPlotList = [self.s1DPlotList, self.s1DPlotList, self.s1DPlotList]
+
+    def newData(self, newSD):
+        self.s1DList = newSD.s1DList
+        #self.s2DList = newSD.s2DList
+        #self.s3DList = newSD.s3DList
+
+        self.s1DPlotList = newSD.s1DPlotList
+        #self.s2DPlotList = newSD.s2DPlotList
+        #self.s3DPlotList = newSD.s3DPlotList
+
+        self.SmallPlotList = newSD.SmallPlotList
+
 
     def generatePlots(self, sensorList):
         s = sin(2*pi*self.t)
