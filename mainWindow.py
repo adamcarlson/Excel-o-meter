@@ -4,7 +4,9 @@ import sys
 import matplotlib
 matplotlib.use('TkAgg')
 
+from tkinter import ttk
 from tkinter import *
+from functools import partial
 
 from tkinter.filedialog import askopenfilename
 
@@ -25,6 +27,16 @@ import sensorData as sd
 FRAME, CANVAS, TOOLBAR = 0, 1, 2
 gX, gY, gZ = 0, 1, 2
 
+class LinkButton(Button):
+    def __init__(self, master, text, command):
+        Button.__init__(self, master, text=text, command=command)
+        self.config(relief=FLAT, fg='#23D400', bg='#3B3B3B')
+        self.bind("<Enter>", partial(self.color_config, self, "#2AFF00"))
+        self.bind("<Leave>", partial(self.color_config, self, "#23D400"))
+
+    def color_config(self, widget, color, event):
+        widget.configure(forground=color)
+
 
 class WelcomeWindow(Tk):
     def __init__(self):
@@ -36,10 +48,15 @@ class WelcomeWindow(Tk):
         #MainWindow(self)
 
     def initUI(self):
-        self.title("Excel-o-meter")
-        self.geometry("500x500")
+        self.title("Start Page - Excel-o-meter")
+        self.geometry("900x600")
         self.mainFrame = Frame(self)
         self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
+        Label(self.mainFrame, text="Excel-o-meter").grid(row=0)
+
+        ttk.Style().configure("TButton", relief='flat', fg='#23D400', bg='#3B3B3B')
+
+
         importButton = Button(self.mainFrame, text="IMPORT", command=self.fImportData)
         openButton = Button(self.mainFrame, text="OPEN", command=self.fOpen)
         importButton.pack(side=TOP, fill=BOTH, expand=1)
@@ -158,8 +175,8 @@ class MainWindow(Frame):
             if i == 0:
                 self.draw4DG(item)
 
-            topLabel = Label(item, text="Sensor {}".format(i+1))
-            topLabel.pack(side=TOP, fill=X, expand=1)
+            #topLabel = Label(item, text="Sensor {}".format(i+1))
+            #topLabel.pack(side=TOP, fill=X, expand=1)
 
             item.pack(side=LEFT, fill=BOTH, expand=1)
 
@@ -185,7 +202,7 @@ class SensorView(Frame):
 
         self.objectList = []
         for i, item in enumerate(secondaryFrameList):
-            canvas = classes.ActuallyWorkingFigureCanvas(sensorData.SmallPlotList[self.sensor][i], item)
+            canvas = classes.ActuallyWorkingFigureCanvas(sensorData.plotList[self.sensor][i], item)
             self.objectList.append((item, canvas, classes.ActuallyWorkingToolbar(canvas, item)))
             self.objectList[i][TOOLBAR].update()
 

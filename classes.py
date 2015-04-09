@@ -2,7 +2,6 @@ __author__ = 'Adam Carlson'
 
 import os
 import pickle
-from subprocess import Popen
 import tkinter.filedialog as fd
 import matplotlib
 import sensorData
@@ -115,27 +114,70 @@ class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
         if self.pButton == 'zoom':
             self.releaseZoom()
 
-class importer(object):
-    def __init__(self, filename):
-        self.process = Popen([r"eom.exe", "{}".format(filename)])
-        self.process.wait()
-
 def openSaveFile(filename=''):
     if filename == '':
-        file = open(fd.askopenfilename(), 'rb')
+        file = open(fd.askopenfilename(filetypes=[('Excel-o-meter Save File','*.esf')]), 'rb')
     else:
         file = open(filename, 'rb')
 
-    sensorData = pickle.load(file)
+    sensorDataObject = pickle.Unpickler(file)
     file.close()
-    return sensorData
+    return(sensorDataObject)
 
-def saveFile(data, filename=''):
+def saveFile(sensorDataObject, filename=''):
     if filename == '':
-        file = open(fd.asksaveasfilename(), 'wb')
+        file = fd.asksaveasfile('wb', defaultextension=".txt")
     else:
         file = open(filename, 'wb')
 
-    pickle.dump(data, file)
+    pickle.Pickler(file).dump(sensorDataObject)
     file.close()
-    return
+
+
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------- Unused, but for the future --------------------------------------
+
+'''
+    def draw4DGraph(self, graphFrame, sensorNum, sensorList):
+        figure = plt.figure(dpi=100, frameon=False)
+        canvas = classes.ActuallyWorkingFigureCanvas(figure, graphFrame)
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        plot = Axes3D(figure)
+        line = plot.plot([sensorList[X][0], sensorList[X][1]],
+                         [sensorList[Y][0], sensorList[Y][1]],
+                         [sensorList[Z][0], sensorList[Z][1]])[0]
+
+        plot.set_xlim3d([0.0, 5.0])
+        plot.set_xlabel('X')
+        plot.set_ylim3d([0.0, 5.0])
+        plot.set_ylabel('Y')
+        plot.set_zlim3d([0.0, 5.0])
+        plot.set_zlabel('Z')
+        plot.set_title('Sensor {}'.format(sensorNum))
+
+        anm.FuncAnimation(figure, self.update_lines, np.size(sensorList[X]), fargs=(sensorList, line), interval=1, blit=False)
+        toolbar = classes.ActuallyWorkingToolbar(canvas, graphFrame)
+        canvas.show()
+        toolbar.update()
+        toolbar.pack(side='top', fill='both')
+
+        return figure
+
+    def update_lines(self, num, data, line):
+        if num > 20:
+            x = num - 20
+        else:
+            x = 0
+        line.set_data([data[0][i] for i in range(x, num)], [ data[1][i] for i in range(x, num)])
+        line.set_3d_properties([data[2][i] for i in range(x, num)])
+        return line
+'''
