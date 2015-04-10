@@ -28,50 +28,16 @@ FRAME, CANVAS, TOOLBAR = 0, 1, 2
 gX, gY, gZ = 0, 1, 2
 
 
-class WelcomeWindow(Tk):
+class MainApp(Tk):
     def __init__(self):
         Tk.__init__(self)
-        self.isSensorView = 0
         self.protocol("WM_DELETE_WINDOW", self.fOnExit)
+
+        self.isSensorView = 0
+
         self.makeMenuBar()
-        self.initUI()
-        #MainWindow(self)
-
-    def initUI(self):
-        self.title("Start Page - Excel-o-meter")
-        #self.geometry("900x600")
-        self.mainFrame = Frame(self, bg='#3B3B3B')
-        self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
-
-        classes.TitleLogo(self.mainFrame, 'elogo.png').grid(row=0, column=0, columnspan=3)
-
-        lineFrameH1 = Frame(self.mainFrame, bg="#2B2B2B", height=2, width=1000)
-        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
-
-        lineFrameV1 = Frame(self.mainFrame, bg="#2B2B2B", height=500, width=2)
-        lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='n')
-
-        startFrame = Frame(self.mainFrame, bg='#3B3B3B', height=200)
-        startFrame.grid(row=2, column=0, sticky='nw')
-
-        quickSelectFrame = Frame(self.mainFrame, bg='#3B3B3B')
-        quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nw')
-
-        recentsFrame = Frame(self.mainFrame, bg='#3B3B3B', width=100, height=100)
-        recentsFrame.grid(row=3, column=0, padx=2, pady=2, sticky='nw')
-
-        Label(startFrame, text="Start", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
-
-        importButton = classes.LinkButton(startFrame, "Import data...", self.fImportData)
-        importButton.grid(row=1, sticky='w', padx=40)
-        openButton = classes.LinkButton(startFrame, "Open...", self.fOpen)
-        openButton.grid(row=2, sticky='w', padx=40)
-
-        Label(recentsFrame, text="Recents", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
-
-        Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
-
-
+        self.currentFrame = HomeWindow(self)
+        self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
 
     def makeMenuBar(self):
         menuBar = Menu(self)
@@ -106,13 +72,14 @@ class WelcomeWindow(Tk):
         helpMenu.add_command(label='Help', command=self.hHelp)
         menuBar.add_cascade(label='Help', menu=helpMenu)
 
-
-    #File Menu
-    def fImportData(self):
-        sensorData.importData()
-        self.makeMenuBar()
-        self.mainFrame.pack_forget()
-        self.mainWindow = MainWindow(self)
+    def changeFrame(self, newFrame, sensor=0):
+        self.currentFrame.pack_forget()
+        self.currentFrame.destroy()
+        if sensor < 1:
+            self.currentFrame = newFrame(self)
+        else:
+            self.currentFrame = newFrame(self, sensor)
+        self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
 
     def sensorSelect(self, sensor):
         self.mainWindow.mainFrame.pack_forget()
@@ -128,19 +95,30 @@ class WelcomeWindow(Tk):
             self.isSensorView = 0
         self.mainWindow.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
 
+    #File Menu
+    def fImportData(self):
+        sensorData.importData()
+        self.changeFrame(RunView)
+
     def fOpen(self):
         sensorData.newData(classes.openSaveFile())
-        self.makeMenuBar()
-        self.mainFrame.pack_forget()
-        self.mainWindow = MainWindow(self)
+        self.changeFrame(RunView)
 
     def fSaveAs(self):
-        classes.saveFile(sensorData)
+        runTitle = classes.saveFile(sensorData)
+        sensorData.runData['runTitle'] = runTitle
+        sensorData.saved = [True, True]
 
     def fSave(self):
-        classes.saveFile(sensorData)
+        if sensorData.saved[0] == False:
+            self.fSaveAs()
+        elif sensorData.saved[1] == False:
+            classes.saveFile(sensorData, sensorData.runData['runTitle'])
+        sensorData.saved = [True, True]
 
     def fOnExit(self):
+        if sensorData.saved[1] == False:
+            self.fSave()    # Make a do you want to save dialogue
         sys.exit()
 
     #Edit Menu
@@ -166,6 +144,76 @@ class WelcomeWindow(Tk):
     # Help Menu
     def hHelp(self):
         pass
+
+class HomeWindow(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent, bg='#3B3B3B')
+        self.parent = parent
+        self.parent.resizable(0, 0)
+        self.initUI()
+
+    def initUI(self):
+        self.parent.title("Excelometer - Start Page")
+
+        classes.TitleLogo(self, 'elogo.png').grid(row=0, column=0, columnspan=3)
+
+        lineFrameH1 = Frame(self, bg="#2B2B2B", height=2, width=1000)
+        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
+
+        lineFrameV1 = Frame(self, bg="#2B2B2B", height=500, width=2)
+        lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='n')
+
+        startFrame = Frame(self, bg='#3B3B3B', height=200)
+        startFrame.grid(row=2, column=0, sticky='nw')
+
+        quickSelectFrame = Frame(self, bg='#3B3B3B')
+        quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nw')
+
+        recentsFrame = Frame(self, bg='#3B3B3B', width=100, height=100)
+        recentsFrame.grid(row=3, column=0, padx=2, pady=2, sticky='nw')
+
+        Label(startFrame, text="Start", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
+        importButton = classes.LinkButton(startFrame, "Import data...", self.parent.fImportData)
+        importButton.grid(row=1, sticky='w', padx=40)
+        openButton = classes.LinkButton(startFrame, "Open...", self.parent.fOpen)
+        openButton.grid(row=2, sticky='w', padx=40)
+
+        Label(recentsFrame, text="Recent", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
+        Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
+class RunView(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent)
+        self.parent = parent
+        self.parent.resizable(0, 0)
+        self.initUI()
+        self.descriptionText = ''
+
+    def initUI(self):
+        self.parent.title("Excelometer - {}".format(sensorData.runData['runTitle']))
+
+        runTitle = Label(self, text=sensorData.runData['runTitle'])
+        runTitle.grid(row=0, column=0)
+
+        middleFrame = Frame(self)
+        middleFrame.grid(row=1, column=0)
+
+        timeLabel = Label(middleFrame, text=sensorData.runData['runTime'])
+        timeLabel.grid(row=0, column=0, sticky='nw')
+        dateLabel = Label(middleFrame, text=sensorData.runData['runDate'])
+        dateLabel.grid(row=0, column=1, sticky='ne')
+        descriptionBox = Entry(self, textvariable=self.descriptionText)
+        descriptionBox.grid(row=1, column=0, columnspan=2, sticky='nw')
+
+        buttonFrame = Frame(self)
+        buttonFrame.grid(row=2, column=0)
+
+        buttonList = [Button(buttonFrame, text="Sensor {}".format(i+1)) for i in range(3)]
+        for i, item in enumerate(buttonList):
+            item.grid(row=0, column=i)
+
 
 class MainWindow(Frame):
     def __init__(self, parent):
@@ -324,6 +372,6 @@ class SensorView(Frame):
 
 
 if __name__ == '__main__':
-    sensorData = sd.SensorData(100)
-    app = WelcomeWindow()
+    sensorData = sd.SensorData()
+    app = MainApp()
     app.mainloop()

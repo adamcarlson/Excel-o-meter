@@ -6,6 +6,8 @@ import numpy as np
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 import os
+import time
+from datetime import datetime, timedelta
 
 X, Y, Z = 0, 1, 2
 
@@ -13,6 +15,8 @@ class SensorData(object):
     def __init__(self, numberOfSensors = 3, Hz=800):
         self.interval = 1/Hz
         self.numberOfSensors = numberOfSensors
+        self.saved = [False, False]
+        self.runData = {}
 
     def importData(self):
         self.filename = fd.askopenfilename(filetypes=[('Excel-o-meter Data Dump File','*.sac')])
@@ -27,6 +31,11 @@ class SensorData(object):
 
             self.plotList = [self.generatePlots(item) for item in self.data]
 
+            self.runData['runTitle'] = self.filename.split('.')[0]
+            self.runData['runTime'] = str(timedelta(milliseconds=(self.intervalCount * self.interval)))
+            self.runData['runDate'] = datetime.now().strftime('%Y-%m-%d')
+            self.runData['runTimeMS'] = self.intervalCount * self.interval
+
     def runUnpacker(self, filename):
         process = Popen([r"eom.exe", "{}".format(filename)], stdout=PIPE)
         stderr, stdout = process.communicate()
@@ -39,6 +48,8 @@ class SensorData(object):
         self.numberOfSensors = sensorDataObject.numberOfSensors
         self.intervalCount = sensorDataObject.intervalCount
         self.plotList = sensorDataObject.plotList
+        self.runData = sensorDataObject.runData
+        self.saved = True
 
     def generatePlots(self, sensorList):
         plotList = [plt.figure(figsize=(1,1), dpi=100, frameon=False) for i in range(3)]

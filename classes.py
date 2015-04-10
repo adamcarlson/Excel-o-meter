@@ -137,6 +137,10 @@ class TitleLogo(Label):
         self.image = PhotoImage(file=image)
         self.configure(image=self.image)
 
+defaultFiletypes = [
+    ("Excelometer Save Files", "*.esf" ),
+    ("All files", "*"),
+    ]
 
 def openSaveFile(filename=''):
     if filename == '':
@@ -150,12 +154,16 @@ def openSaveFile(filename=''):
 
 def saveFile(sensorDataObject, filename=''):
     if filename == '':
-        file = fd.asksaveasfile('wb', defaultextension=".txt")
+        sfFileName = fd.asksaveasfilename(filetypes=defaultFiletypes, defaultextention='.esf')
+        file = open(sfFileName, 'wb')
     else:
-        file = open(filename, 'wb')
+        sfFileName = filename + '.esf'
+        file = open(sfFileName, 'wb')
 
+    sensorDataObject.runData['runTitle'] = sfFileName.split('.')[0]
     pickle.Pickler(file).dump(sensorDataObject)
     file.close()
+    return sfFileName.split('.')[0]
 
 
 
