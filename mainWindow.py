@@ -27,40 +27,50 @@ import sensorData as sd
 FRAME, CANVAS, TOOLBAR = 0, 1, 2
 gX, gY, gZ = 0, 1, 2
 
-class LinkButton(Button):
-    def __init__(self, master, text, command):
-        Button.__init__(self, master, text=text, command=command)
-        self.config(relief=FLAT, fg='#23D400', bg='#3B3B3B')
-        self.bind("<Enter>", partial(self.color_config, self, "#2AFF00"))
-        self.bind("<Leave>", partial(self.color_config, self, "#23D400"))
-
-    def color_config(self, widget, color, event):
-        widget.configure(forground=color)
-
 
 class WelcomeWindow(Tk):
     def __init__(self):
         Tk.__init__(self)
         self.isSensorView = 0
         self.protocol("WM_DELETE_WINDOW", self.fOnExit)
-        #self.makeMenuBar()
+        self.makeMenuBar()
         self.initUI()
         #MainWindow(self)
 
     def initUI(self):
         self.title("Start Page - Excel-o-meter")
-        self.geometry("900x600")
-        self.mainFrame = Frame(self)
+        #self.geometry("900x600")
+        self.mainFrame = Frame(self, bg='#3B3B3B')
         self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
-        Label(self.mainFrame, text="Excel-o-meter").grid(row=0)
 
-        ttk.Style().configure("TButton", relief='flat', fg='#23D400', bg='#3B3B3B')
+        classes.TitleLogo(self.mainFrame, 'elogo.png').grid(row=0, column=0, columnspan=3)
 
+        lineFrameH1 = Frame(self.mainFrame, bg="#2B2B2B", height=2, width=1000)
+        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
 
-        importButton = Button(self.mainFrame, text="IMPORT", command=self.fImportData)
-        openButton = Button(self.mainFrame, text="OPEN", command=self.fOpen)
-        importButton.pack(side=TOP, fill=BOTH, expand=1)
-        openButton.pack(side=TOP, fill=BOTH, expand=1)
+        lineFrameV1 = Frame(self.mainFrame, bg="#2B2B2B", height=500, width=2)
+        lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='n')
+
+        startFrame = Frame(self.mainFrame, bg='#3B3B3B', height=200)
+        startFrame.grid(row=2, column=0, sticky='nw')
+
+        quickSelectFrame = Frame(self.mainFrame, bg='#3B3B3B')
+        quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nw')
+
+        recentsFrame = Frame(self.mainFrame, bg='#3B3B3B', width=100, height=100)
+        recentsFrame.grid(row=3, column=0, padx=2, pady=2, sticky='nw')
+
+        Label(startFrame, text="Start", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
+        importButton = classes.LinkButton(startFrame, "Import data...", self.fImportData)
+        importButton.grid(row=1, sticky='w', padx=40)
+        openButton = classes.LinkButton(startFrame, "Open...", self.fOpen)
+        openButton.grid(row=2, sticky='w', padx=40)
+
+        Label(recentsFrame, text="Recents", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
+        Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+
 
 
     def makeMenuBar(self):
