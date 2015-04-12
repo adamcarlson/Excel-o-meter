@@ -4,7 +4,7 @@ import sys
 import matplotlib
 matplotlib.use('TkAgg')
 
-from tkinter import ttk
+from tkinter import messagebox
 from tkinter import *
 from functools import partial
 
@@ -20,12 +20,23 @@ import matplotlib.animation as ani
 import functools
 import math
 
-import classes
+
+from fixedCanvasToolbar import ActuallyWorkingFigureCanvas, ActuallyWorkingToolbar
+from extraUIElements import TabFrame, TitleLogo, LinkButton
 import sensorData as sd
 
 # Constants:
 FRAME, CANVAS, TOOLBAR = 0, 1, 2
 gX, gY, gZ = 0, 1, 2
+
+colors = {
+    'fg1' : '#23D400',
+    'fg2' : '#7FD66D',
+    'fg3' : '#D9D9D9',
+    'bg': '#3B3B3B',
+    'selected fg' : '#7FD66D',
+    'selected bg' : '#2B2B2B'
+}
 
 
 class MainApp(Tk):
@@ -59,41 +70,19 @@ class MainApp(Tk):
         editMenu.add_command(label='Filter...', command=self.eFilter)
         menuBar.add_cascade(label='Edit', menu=editMenu)
 
-        viewMenu = Menu(menuBar)
-        viewMenu.config(tearoff=0)
-        viewMenu.add_command(label='Home', command=self.vHome)
-        viewMenu.add_command(label='Sensor1', command=self.vSensor1)
-        viewMenu.add_command(label='Sensor2', command=self.vSensor2)
-        viewMenu.add_command(label='Sensor3', command=self.vSensor3)
-        menuBar.add_cascade(label='View', menu=viewMenu)
-
         helpMenu = Menu(menuBar)
         helpMenu.config(tearoff=0)
         helpMenu.add_command(label='Help', command=self.hHelp)
         menuBar.add_cascade(label='Help', menu=helpMenu)
 
-    def changeFrame(self, newFrame, sensor=0):
+    def changeFrame(self, newFrame):
         self.currentFrame.pack_forget()
         self.currentFrame.destroy()
-        if sensor < 1:
-            self.currentFrame = newFrame(self)
-        else:
-            self.currentFrame = newFrame(self, sensor)
+        self.currentFrame = newFrame(self)
         self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
 
-    def sensorSelect(self, sensor):
-        self.mainWindow.mainFrame.pack_forget()
-        self.sensorViewFrame = Frame(self)
-        self.sensorViewFrame.pack(side=TOP, fill=BOTH, expand=1)
-        SensorView(self.sensorViewFrame, sensor)
-        self.isSensorView = 1
-
-    def homeView(self):
-        if self.isSensorView == 1:
-            self.sensorViewFrame.pack_forget()
-            self.sensorViewFrame.destroy()
-            self.isSensorView = 0
-        self.mainWindow.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
+    def showSaveDialogue(self):
+        return messagebox.askyesno("Excelometer", "Unsaved changes have been made.\nWould you like to save before exiting?")
 
     #File Menu
     def fImportData(self):
@@ -101,11 +90,11 @@ class MainApp(Tk):
         self.changeFrame(RunView)
 
     def fOpen(self):
-        sensorData.newData(classes.openSaveFile())
+        sensorData.newData(sd.openSaveFile())
         self.changeFrame(RunView)
 
     def fSaveAs(self):
-        runTitle = classes.saveFile(sensorData)
+        runTitle = sd.saveFile(sensorData)
         sensorData.runData['runTitle'] = runTitle
         sensorData.saved = [True, True]
 
@@ -113,33 +102,18 @@ class MainApp(Tk):
         if sensorData.saved[0] == False:
             self.fSaveAs()
         elif sensorData.saved[1] == False:
-            classes.saveFile(sensorData, sensorData.runData['runTitle'])
-        sensorData.saved = [True, True]
+            sd.saveFile(sensorData, sensorData.runData['runTitle'])
+            sensorData.saved = [True, True]
 
     def fOnExit(self):
         if sensorData.saved[1] == False:
-            self.fSave()    # Make a do you want to save dialogue
+            if(self.showSaveDialogue()):
+                self.fSave()
         sys.exit()
 
     #Edit Menu
     def eFilter(self):
         pass
-
-    #ViewMenu
-    def vHome(self):
-        self.homeView()
-
-    def vSensor1(self):
-        self.homeView()
-        self.sensorSelect(0)
-
-    def vSensor2(self):
-        self.homeView()
-        self.sensorSelect(1)
-
-    def vSensor3(self):
-        self.homeView()
-        self.sensorSelect(2)
 
     # Help Menu
     def hHelp(self):
@@ -155,7 +129,7 @@ class HomeWindow(Frame):
     def initUI(self):
         self.parent.title("Excelometer - Start Page")
 
-        classes.TitleLogo(self, 'elogo.png').grid(row=0, column=0, columnspan=3)
+        TitleLogo(self, 'elogo.png').grid(row=0, column=0, columnspan=3)
 
         lineFrameH1 = Frame(self, bg="#2B2B2B", height=2, width=1000)
         lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
@@ -174,9 +148,9 @@ class HomeWindow(Frame):
 
         Label(startFrame, text="Start", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
 
-        importButton = classes.LinkButton(startFrame, "Import data...", self.parent.fImportData)
+        importButton = LinkButton(startFrame, "Import data...", self.parent.fImportData, colors)
         importButton.grid(row=1, sticky='w', padx=40)
-        openButton = classes.LinkButton(startFrame, "Open...", self.parent.fOpen)
+        openButton = LinkButton(startFrame, "Open...", self.parent.fOpen, colors)
         openButton.grid(row=2, sticky='w', padx=40)
 
         Label(recentsFrame, text="Recent", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
@@ -188,131 +162,81 @@ class RunView(Frame):
         Frame.__init__(self, parent)
         self.parent = parent
         self.parent.resizable(0, 0)
-        self.initUI()
         self.descriptionText = ''
+        self.initUI()
 
     def initUI(self):
         self.parent.title("Excelometer - {}".format(sensorData.runData['runTitle']))
 
         runTitle = Label(self, text=sensorData.runData['runTitle'])
-        runTitle.grid(row=0, column=0)
+        runTitle.grid(row=0, column=0, sticky='n')
+
+        lineFrameH1 = Frame(self, bg="#2B2B2B", height=2, width=1006)
+        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
 
         middleFrame = Frame(self)
-        middleFrame.grid(row=1, column=0)
+        middleFrame.grid(row=2, column=0)
 
-        timeLabel = Label(middleFrame, text=sensorData.runData['runTime'])
+        timeLabel = Label(middleFrame, text='Run Durration: {}'.format(sensorData.runData['runTime']))
         timeLabel.grid(row=0, column=0, sticky='nw')
         dateLabel = Label(middleFrame, text=sensorData.runData['runDate'])
         dateLabel.grid(row=0, column=1, sticky='ne')
-        descriptionBox = Entry(self, textvariable=self.descriptionText)
-        descriptionBox.grid(row=1, column=0, columnspan=2, sticky='nw')
 
-        buttonFrame = Frame(self)
-        buttonFrame.grid(row=2, column=0)
+        tabs = [
+            ('Notes', NoteView),
+        ]
+        for i in range(sensorData.numberOfSensors):
+            tabs.append(('Sensor {}'.format(i+1), SensorView))
 
-        buttonList = [Button(buttonFrame, text="Sensor {}".format(i+1)) for i in range(3)]
-        for i, item in enumerate(buttonList):
-            item.grid(row=0, column=i)
+        content = TabFrame(self, colors, tabs)
+        content.grid(row=3, column=0, sticky='s')
 
-
-class MainWindow(Frame):
-    def __init__(self, parent):
-        Frame.__init__(self, parent)
+class NoteView(Frame):
+    def __int__(self, parent):
         self.parent = parent
+        Frame.__init__(self.parent)
         self.initUI()
 
-
     def initUI(self):
-        self.parent.title("Excel-o-meter")
-        self.parent.geometry("1500x900")
-        self.mainFrame = Frame(self.parent)
-        self.mainFrame.pack(side=TOP, fill=BOTH, expand=1)
-
-        sensorList = [Frame(self.mainFrame) for i in range(3)]
-        for i, item in enumerate(sensorList):
-            if i == 0:
-                self.draw4DG(item)
-
-            #topLabel = Label(item, text="Sensor {}".format(i+1))
-            #topLabel.pack(side=TOP, fill=X, expand=1)
-
-            item.pack(side=LEFT, fill=BOTH, expand=1)
-
-    def draw4DG(self, graphFrame):
-        sensorData.draw4DGraph(graphFrame, 1, sensorData.s1DList)
+        descriptionBox = Text(self, width=124, height=20)
+        descriptionBox.grid(row=1, column=0, columnspan=2)
 
 class SensorView(Frame):
     def __init__(self, parent, sensor):
-        Frame.__init__(self, parent)
         self.parent = parent
-        self.sensor = sensor
-        self.init()
+        self.sensorNum = sensor - 1
+        Frame.__init__(self, self.parent)
+        self.initUI()
 
-    def init(self):
+    def initUI(self):
+        temp = [ActuallyWorkingFigureCanvas(sensorData.plotList[self.sensorNum][i], self) for i in range(3)]
+        self.graphList = [(item, ActuallyWorkingToolbar(item, self)) for item in temp]
 
-        self.frameList = []
         for i in range(3):
-            self.frameList.append(Frame(self.parent))
-        secondaryFrameList = []
-        for item in self.frameList:
-            secondaryFrameList.append(Frame(item))
-            secondaryFrameList.append(Frame(item))
+            self.drawGraph(self.graphList[i], i)
 
-        self.objectList = []
-        for i, item in enumerate(secondaryFrameList):
-            canvas = classes.ActuallyWorkingFigureCanvas(sensorData.plotList[self.sensor][i], item)
-            self.objectList.append((item, canvas, classes.ActuallyWorkingToolbar(canvas, item)))
-            self.objectList[i][TOOLBAR].update()
-
-        axisList = ['X','Y','Z']
-        for i, item in enumerate(self.frameList):
-            self.drawLabel(item, "Sensor {} {}".format(self.sensor + 1, axisList[i]))
-
-        for i, item in enumerate(self.objectList):
-            self.drawGraph(item, i)
-            self.packer(item, i)
-
-        for item in self.frameList:
-            item.pack(side=TOP, fill=BOTH, expand=1)
-
-    def drawLabel(self, box, text):
-        topLabel = Label(box, text=text)
-        topLabel.pack(side=TOP, fill=BOTH, expand=0)
+    def packer(self):
+        for i in range(3):
+            self.graphList[i][0].get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
     def drawGraph(self, item, i):
-        canvas = item[CANVAS]
+        canvas = item[0]
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         canvas.get_tk_widget().bind("<Button-1>", functools.partial(self.expand, itemNum=i))
 
-    def packer(self, item, i):
-        packList = [LEFT, RIGHT] * 6
-        item[FRAME].pack(side=packList[i], fill=BOTH, expand=1)
-
-    def unpacker(self, itemNum):
-        frameListNum = math.floor(itemNum / 2)
-        if frameListNum == math.floor((itemNum + 1) / 2):
-            remove = itemNum + 1
-        else:
-            remove = itemNum - 1
-
-        self.objectList[remove][FRAME].pack_forget()
-        self.objectList[remove][FRAME].pack_forget()
-
-        for i, item in enumerate(self.frameList):
-            if i != frameListNum:
-                item.pack_forget()
+    def unpacker(self):
+        for graph, toolbar in self.graphList:
+            graph._tkcanvas.pack_forget()
 
     def expand(self, event, itemNum):
-        canvas = self.objectList[itemNum][CANVAS]
-        graphFrame = self.objectList[itemNum][FRAME]
-        toolbar = self.objectList[itemNum][TOOLBAR]
+        canvas = self.graphList[itemNum][0]
+        toolbar = self.graphList[itemNum][1]
 
-        self.unpacker(itemNum)
-        canvas._tkcanvas.pack_forget()
+        self.unpacker()
         canvas.rebinder()
 
-        self.buttonFrame = Frame(graphFrame)
+        self.buttonFrame = Frame(self)
         leftButtons = Frame(self.buttonFrame, width=300, height=50)
         rightButtons = Frame(self.buttonFrame, width=300, height=50)
         middleButtons = Frame(self.buttonFrame)
@@ -327,15 +251,9 @@ class SensorView(Frame):
 
         if itemNum != 0:
             prevGButton = Button(leftButtons, text="Previous Graph", command=functools.partial(self.changeGraph, i=itemNum-1, itemNum=itemNum))
-            if itemNum != 1:
-                prevSButton = Button(leftButtons, text="Previous Sensor", command=functools.partial(self.changeGraph, i=itemNum-2, itemNum=itemNum))
-                prevSButton.pack(side=LEFT)
             prevGButton.pack(side=LEFT)
-        if itemNum != 5:
+        if itemNum != 3:
             nextGButton = Button(rightButtons, text="Next Graph", command=functools.partial(self.changeGraph, i=itemNum+1, itemNum=itemNum))
-            if itemNum != 4:
-                nextSButton = Button(rightButtons, text="Next Sensor", command=functools.partial(self.changeGraph, i=itemNum+2, itemNum=itemNum))
-                nextSButton.pack(side=RIGHT)
             nextGButton.pack(side=RIGHT)
 
         backButton = Button(middleButtons, text="Full View", command=functools.partial(self.fullView, i=itemNum))
@@ -344,6 +262,7 @@ class SensorView(Frame):
         filterButton.pack(side=RIGHT)
 
         canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        toolbar.update()
         toolbar.show()
 
     def changeGraph(self, i, itemNum):
@@ -352,20 +271,13 @@ class SensorView(Frame):
 
 
     def fullView(self, i):
-
         self.buttonFrame.pack_forget()
-        self.objectList[i][TOOLBAR].hide()
-        self.objectList[i][TOOLBAR].releaseButton()
+        self.graphList[i][1].hide()
+        self.graphList[i][1].releaseButton()
+        self.graphList[i][0]._tkcanvas.pack_forget()
+        self.graphList[i][0]._tkcanvas.bind("<Button-1>", functools.partial(self.expand, itemNum=i))
 
-        self.objectList[i][FRAME].pack_forget()
-        self.objectList[i][CANVAS].get_tk_widget().bind("<Button-1>", functools.partial(self.expand, itemNum=i))
-        self.frameList[math.floor(i/2)].pack_forget()
-
-        for i, item in enumerate(self.objectList):
-            self.packer(item, i)
-
-        for item in self.frameList:
-            item.pack(side=TOP, fill=BOTH, expand=1)
+        self.packer()
 
     def filterGraph(self, itemNum):
         pass

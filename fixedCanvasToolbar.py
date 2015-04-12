@@ -1,15 +1,9 @@
 __author__ = 'Adam Carlson'
 
-import os
-import pickle
-from functools import partial
-from tkinter import PhotoImage
-import tkinter.filedialog as fd
 import matplotlib
-import sensorData
 matplotlib.use('TkAgg')
 
-from tkinter import *
+from tkinter import Frame, Canvas, PhotoImage, TOP, X
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg, NavigationToolbar2TkAgg, NavigationToolbar2
 
 class ActuallyWorkingFigureCanvas(FigureCanvasTkAgg):
@@ -115,55 +109,6 @@ class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
             self.releasePan()
         if self.pButton == 'zoom':
             self.releaseZoom()
-
-class LinkButton(Label):
-    def __init__(self, master, text, command):
-        Label.__init__(self, master, text=text)
-        self.command = command
-        self.config(fg='#23D400', bg='#3B3B3B', font=("Calibri", 16))
-        self.bind("<Enter>", partial(self.color_config, self, "#7FD66D"))
-        self.bind("<Leave>", partial(self.color_config, self, "#23D400"))
-        self.bind("<Button-1>", partial(self.runCommand))
-
-    def runCommand(self, widget):
-        self.command()
-
-    def color_config(self, widget, color, event):
-        widget.configure(foreground=color)
-
-class TitleLogo(Label):
-    def __init__(self, master, image):
-        Label.__init__(self, master, bg='#3B3B3B')
-        self.image = PhotoImage(file=image)
-        self.configure(image=self.image)
-
-defaultFiletypes = [
-    ("Excelometer Save Files", "*.esf" ),
-    ("All files", "*"),
-    ]
-
-def openSaveFile(filename=''):
-    if filename == '':
-        file = open(fd.askopenfilename(filetypes=[('Excel-o-meter Save File','*.esf')]), 'rb')
-    else:
-        file = open(filename, 'rb')
-
-    sensorDataObject = pickle.Unpickler(file)
-    file.close()
-    return(sensorDataObject)
-
-def saveFile(sensorDataObject, filename=''):
-    if filename == '':
-        sfFileName = fd.asksaveasfilename(filetypes=defaultFiletypes, defaultextention='.esf')
-        file = open(sfFileName, 'wb')
-    else:
-        sfFileName = filename + '.esf'
-        file = open(sfFileName, 'wb')
-
-    sensorDataObject.runData['runTitle'] = sfFileName.split('.')[0]
-    pickle.Pickler(file).dump(sensorDataObject)
-    file.close()
-    return sfFileName.split('.')[0]
 
 
 

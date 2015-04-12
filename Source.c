@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
 
 	fopen_s(&inputFile, argv[1], "rb");
 	fopen_s(&s0, "s0.dat", "wb");
-	fopen_s(&s1, "s1.dat", "wb");
+	//fopen_s(&s1, "s1.dat", "wb");
 
 	while (fread_s(dataPoint, 6, 2, 3, inputFile))
 	{
@@ -74,13 +74,14 @@ int main(int argc, char *argv[]){
 		}
 		sensor = sensorCheck(dataPoint[0]);
 
-		/*
+		
 		// For REAL data:
 		newData[0] = ((float)(dataPoint[0] >> 2)) / 1024.0;
 		newData[1] = ((float)(dataPoint[1] >> 2)) / 1024.0;
 		newData[2] = ((float)(dataPoint[2] >> 2)) / 1024.0;
-		*/
+		
 
+		/*
 		// For TEST data:
 		dataPoint[0] = dataPoint[0] >> 4;
 		dataPoint[1] = dataPoint[1] >> 4;
@@ -89,20 +90,20 @@ int main(int argc, char *argv[]){
 		newData[0] = (float)dataPoint[0];
 		newData[1] = (float)dataPoint[1];
 		newData[2] = (float)dataPoint[2];
+		*/
 
+		//outputToScreen(newData, sensor);
 
-
-		outputToScreen(newData, sensor);
-
-		if (sensor == 0)
+		//if (sensor == 0)
 			outputFile = s0;
-		else if (sensor == 1)
+		/*else if (sensor == 1)
 			outputFile = s1;
 		else
-			outputFile = s2;
+			outputFile = s2;*/
 
 		fwrite(newData, sizeof(float), 3, outputFile);
 	}
+	fprintf(stdout, "1");
 
 	/*
 	while (fread_s(dataPoint, 6, 2, 3, inputFile)){
@@ -138,5 +139,5 @@ int main(int argc, char *argv[]){
 
 	fclose(inputFile);
 	fclose(s0);
-	fclose(s1);
+	//fclose(s1);
 }
