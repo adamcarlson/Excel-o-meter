@@ -30,12 +30,13 @@ FRAME, CANVAS, TOOLBAR = 0, 1, 2
 gX, gY, gZ = 0, 1, 2
 
 colors = {
-    'fg1' : '#23D400',
-    'fg2' : '#7FD66D',
-    'fg3' : '#D9D9D9',
-    'bg': '#3B3B3B',
-    'selected fg' : '#7FD66D',
-    'selected bg' : '#2B2B2B'
+    'textClickable' : '#0088FF',
+    'textHover' : '#00D5FF',
+    'textNormal' : '#D9D9D9',
+    'textSelected' : '#00D5FF',     # Usually the same as textHover
+    'bgNormal': '#3B3B3B',
+    'bgSecondary' : '#2B2B2B',
+    'textField' : '#D9D9D9'
 }
 
 
@@ -121,7 +122,7 @@ class MainApp(Tk):
 
 class HomeWindow(Frame):
     def __init__(self, parent):
-        Frame.__init__(self, parent, bg='#3B3B3B')
+        Frame.__init__(self, parent, bg=colors['bgNormal'])
         self.parent = parent
         self.parent.resizable(0, 0)
         self.initUI()
@@ -129,77 +130,75 @@ class HomeWindow(Frame):
     def initUI(self):
         self.parent.title("Excelometer - Start Page")
 
-        TitleLogo(self, 'elogo.png').grid(row=0, column=0, columnspan=3)
+        TitleLogo(self, 'elogo.png', colors).grid(row=0, column=0, columnspan=3)
 
-        lineFrameH1 = Frame(self, bg="#2B2B2B", height=2, width=1000)
+        lineFrameH1 = Frame(self, bg=colors['bgSecondary'], height=2, width=1000)
         lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
 
-        lineFrameV1 = Frame(self, bg="#2B2B2B", height=500, width=2)
+        lineFrameV1 = Frame(self, bg=colors['bgSecondary'], height=500, width=2)
         lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='n')
 
-        startFrame = Frame(self, bg='#3B3B3B', height=200)
+        startFrame = Frame(self, bg=colors['bgNormal'], height=200)
         startFrame.grid(row=2, column=0, sticky='nw')
 
-        quickSelectFrame = Frame(self, bg='#3B3B3B')
+        quickSelectFrame = Frame(self, bg=colors['bgNormal'])
         quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nw')
 
-        recentsFrame = Frame(self, bg='#3B3B3B', width=100, height=100)
+        recentsFrame = Frame(self, bg=colors['bgNormal'], width=100, height=100)
         recentsFrame.grid(row=3, column=0, padx=2, pady=2, sticky='nw')
 
-        Label(startFrame, text="Start", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+        Label(startFrame, text="Start", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
 
         importButton = LinkButton(startFrame, "Import data...", self.parent.fImportData, colors)
         importButton.grid(row=1, sticky='w', padx=40)
         openButton = LinkButton(startFrame, "Open...", self.parent.fOpen, colors)
         openButton.grid(row=2, sticky='w', padx=40)
 
-        Label(recentsFrame, text="Recent", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+        Label(recentsFrame, text="Recent", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
 
-        Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg='#3B3B3B', fg='#D9D9D9').grid(row=0, sticky='nw', padx=40, pady=5)
+        Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
 
 class RunView(Frame):
     def __init__(self, parent):
-        Frame.__init__(self, parent)
+        Frame.__init__(self, parent, bg=colors['bgNormal'])
         self.parent = parent
-        self.parent.resizable(0, 0)
+        self.parent.geometry('1500x800')
+        self.parent.resizable(1, 1)
         self.descriptionText = ''
         self.initUI()
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure(3, weight=1)
 
     def initUI(self):
         self.parent.title("Excelometer - {}".format(sensorData.runData['runTitle']))
 
-        runTitle = Label(self, text=sensorData.runData['runTitle'])
-        runTitle.grid(row=0, column=0, sticky='n')
+        runTitle = Label(self, text=sensorData.runData['runTitle'], fg=colors['textNormal'], bg=colors['bgNormal'], height=1, font=("Calibri", 30))
+        runTitle.grid(row=0, column=0, sticky='nw', columnspan=3, ipadx=10)
 
-        lineFrameH1 = Frame(self, bg="#2B2B2B", height=2, width=1006)
-        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
+        lineFrameH1 = Frame(self, bg=colors['bgSecondary'], height=2)
+        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='new')
 
-        middleFrame = Frame(self)
-        middleFrame.grid(row=2, column=0)
+        timeLabel = Label(self, text='Run Durration: {}'.format(sensorData.runData['runTime']), fg=colors['textNormal'], bg=colors['bgNormal'], font=("Calibri", 16))
+        timeLabel.grid(row=2, column=0, sticky='nsw')
+        dateLabel = Label(self, text=sensorData.runData['runDate'], fg=colors['textNormal'], bg=colors['bgNormal'], font=("Calibri", 16))
+        dateLabel.grid(row=2, column=2, sticky='nse')
 
-        timeLabel = Label(middleFrame, text='Run Durration: {}'.format(sensorData.runData['runTime']))
-        timeLabel.grid(row=0, column=0, sticky='nw')
-        dateLabel = Label(middleFrame, text=sensorData.runData['runDate'])
-        dateLabel.grid(row=0, column=1, sticky='ne')
-
-        tabs = [
-            ('Notes', NoteView),
-        ]
+        tabs = [('Notes', NoteView)]
         for i in range(sensorData.numberOfSensors):
             tabs.append(('Sensor {}'.format(i+1), SensorView))
 
         content = TabFrame(self, colors, tabs)
-        content.grid(row=3, column=0, sticky='s')
+        content.grid(row=3, column=0, sticky='nsew', columnspan=3)
 
 class NoteView(Frame):
-    def __int__(self, parent):
+    def __init__(self, parent, junk=0):
         self.parent = parent
-        Frame.__init__(self.parent)
+        Frame.__init__(self, self.parent, bg=colors['bgNormal'])
         self.initUI()
 
     def initUI(self):
-        descriptionBox = Text(self, width=124, height=20)
-        descriptionBox.grid(row=1, column=0, columnspan=2)
+        descriptionBox = Text(self, width=124, height=20, bg=colors['textField'])
+        descriptionBox.pack(side=TOP, fill=BOTH, expand=1)
 
 class SensorView(Frame):
     def __init__(self, parent, sensor):

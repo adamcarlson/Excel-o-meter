@@ -34,7 +34,7 @@ class SensorData(object):
             self.runData['runTitle'] = self.filename.split('.')[0].split('/')[-1]
             self.runData['runTime'] = str(timedelta(milliseconds=(self.intervalCount * self.interval)))
             self.runData['runDate'] = datetime.now().strftime('%Y-%m-%d')
-            self.runData['runTimeMS'] = self.intervalCount * self.interval
+            self.runData['runTimeMS'] = self.intervalCount / self.interval
             self.saved[1] = False
 
     def runUnpacker(self, filename):
