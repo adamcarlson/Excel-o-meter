@@ -7,13 +7,16 @@ from functools import partial
 
 
 class LinkButton(Label):
-    def __init__(self, master, text, command, colorScheme, width=0, height=0):
+    def __init__(self, master, text, command, colorScheme, **kwargs):
+        width = kwargs.get('width', 0)
+        height = kwargs.get('height', 0)
         if width == 0 and height == 0:
             Label.__init__(self, master, text=text)
         else:
             Label.__init__(self, master, text=text, width=width, height=height)
         self.colorScheme = colorScheme
         self.command = command
+        self.commandParameters = kwargs.get('commandParameters', None)
         self.text = text
         self.drawButton()
 
@@ -25,7 +28,10 @@ class LinkButton(Label):
         self.bind("<Button-1>", partial(self.runCommand))
 
     def runCommand(self, widget):
-        self.command()
+        if self.commandParameters != None:
+            self.command(self.commandParameters)
+        else:
+            self.command()
 
     def color_config(self, widget, color, event):
         if not self.selected:
@@ -55,9 +61,6 @@ class TabFrame(Frame):
         self.contentFrame = Frame(self, bg=self.colorScheme['bgSecondary'])
         self.contentFrame.grid(row=0, column=1, sticky='nsew', ipadx=5, ipady=5)
 
-        self.currentFrame = Frame(self.contentFrame)
-        self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
-
     def initUI(self):
         self.tabButtons = [TabButton(self.buttonFrame, item[0], self.colorScheme, self.changeTabs, item[1], 20, 2) for i, item in enumerate(self.tabs)]
         for i, item in enumerate(self.tabButtons):
@@ -78,9 +81,14 @@ class TabFrame(Frame):
         self.changeContentFrame(tabButton.contentFrame, int(sensorNum))
 
     def changeContentFrame(self, displayFrame, sensor):
-        self.currentFrame.pack_forget()
+        if hasattr(self, 'currentFrame'):
+            self.currentFrame.kill()
+            self.currentFrame.pack_forget()
         self.currentFrame = displayFrame(self.contentFrame, sensor)
         self.currentFrame.pack(side=TOP, fill=BOTH, expand=1, padx=10, pady=10)
+
+    def kill(self):
+        self.currentFrame.kill()
 
 class TabButton(LinkButton):
     def __init__(self, master, text, colorScheme, command, contentFrame, width, height):
@@ -88,8 +96,14 @@ class TabButton(LinkButton):
         self.colorScheme = colorScheme
         self.command = command
         self.text = text
-        LinkButton.__init__(self, master, self.text, self.command, self.colorScheme, width, height)
+        LinkButton.__init__(self, master, self.text, self.command, self.colorScheme, width=width, height=height)
         self.drawButton()
 
     def runCommand(self, widget):
         self.command(self)
+
+class GraphContainer(object):
+    def __init__(self, graphNumber, canvas, toolbar):
+        self.graphNumber = graphNumber
+        self.canvas = canvas
+        self.toolbar = toolbar

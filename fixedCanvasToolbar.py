@@ -79,16 +79,20 @@ class ActuallyWorkingFigureCanvas(FigureCanvasTkAgg):
         root.bind("<Destroy>", filter_destroy)
 
 class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
-    def __init__(self, canvas, window):
-        NavigationToolbar2TkAgg.__init__(self, canvas, window)
+    def __init__(self, canvas, parent):
+        self.parent = parent
+        self.frame = Frame(parent)
+        NavigationToolbar2TkAgg.__init__(self, canvas, self.frame)
         self.pButton = None
+
         self.hide()
 
     def hide(self, *args):
-        Frame.pack_forget(self)
+        Frame.grid_remove(self)
+        self.releaseButton()
 
-    def show(self):
-        Frame.pack(self, side=TOP, fill=X, expand=0)
+    def show(self, rowNumber):
+        Frame.grid(self, row=rowNumber, sticky='nsew')
 
     def pan(self, *args):
         self.pButton = 'pan'
