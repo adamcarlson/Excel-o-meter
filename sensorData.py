@@ -10,9 +10,10 @@ from datetime import datetime, timedelta
 import pickle
 
 class SensorData(object):
-    def __init__(self, numberOfSensors = 3, Hz=800):
+    def __init__(self, colorScheme, numberOfSensors = 3, Hz=800):
         self.interval = 1/Hz
         self.numberOfSensors = numberOfSensors
+        self.colorScheme = colorScheme
         self.saved = [False, True]     # [been saved before, currently saved]
         self.runData = {}
 
@@ -27,7 +28,7 @@ class SensorData(object):
             self.truncateToShortest()
             self.t = np.arange(0.0,(self.intervalCount*self.interval),self.interval)
 
-            self.plotList = [self.generatePlots(item) for item in self.data]
+            self.plotList = [FigurePlot(item, self.t, self.colorScheme) for item in self.data]
 
             self.runData['runTitle'] = self.filename.split('.')[0].split('/')[-1]
             self.runData['runTime'] = str(timedelta(milliseconds=(self.intervalCount * self.interval)))
@@ -51,16 +52,14 @@ class SensorData(object):
         self.runData = sensorDataObject.runData
         self.saved = [True, True]
 
-    def generatePlots(self, sensorList):
-        axis = ['X', 'Y', 'Z']
-        plotList = [plt.figure(figsize=(1,1), dpi=100, frameon=False) for i in range(3)]
-        for i, item in enumerate(plotList):
-            plot = plotList[i].add_subplot(111)
-            plot.set_xlabel(r'$samples$')
-            plot.set_title('{} Axis'.format(axis[i]))
-            plot.set_ylabel(r"g's")
-            plot.plot(self.t, sensorList[i])
-        return plotList
+    def grabHistory(self, sensor, view, position):
+        if 'runHistory{}'.format(sensor) not in self.runData.keys():
+            self.runData['runHistory{}'.format(sensor)] = (view, position)
+
+    def setHistory(self, sensor, toolbar):
+        toolbar._views, toolbar._positions = self.runData['runHistory{}'.format(sensor)]
+        toolbar.set_history_buttons()
+        toolbar._update_view()
 
     # Utility Methods
     def truncateToShortest(self):
@@ -77,6 +76,44 @@ class SensorData(object):
                     count = size
         self.intervalCount = count
         return self.intervalCount
+
+class FigurePlot(object):
+    def __init__(self, sensorList, t, colorScheme):
+        self.sensorList = sensorList
+        self.t = t
+        self.colorScheme = colorScheme
+        self.makePlots()
+
+    def makePlots(self):
+        self.figure = plt.figure(figsize=(1,1), dpi=100, frameon=False, facecolor=self.colorScheme['graphBg'])
+        self.AxisPlot = self.figure.add_axes([.06, .1, .88, .8])
+        self.AxisPlot.set_xlabel(r'thousands of samples')
+        self.AxisPlot.set_ylabel(r"g's")
+        self.lines = self.AxisPlot.plot(self.t, self.sensorList[0], self.colorScheme['graphX'],
+                                        self.t, self.sensorList[1], self.colorScheme['graphY'],
+                                        self.t, self.sensorList[2], self.colorScheme['graphZ'])
+
+
+    def hideSubplot(self, identifier):
+        if identifier == 'X':
+            self.lines[0].set_visible(False)
+        elif identifier == 'Y':
+            self.lines[1].set_visible(False)
+        elif identifier == 'Z':
+            self.lines[2].set_visible(False)
+
+        self.figure.canvas.draw()
+
+    def showSubplot(self, identifier):
+        if identifier == 'X':
+            self.lines[0].set_visible(True)
+        elif identifier == 'Y':
+            self.lines[1].set_visible(True)
+        elif identifier == 'Z':
+            self.lines[2].set_visible(True)
+
+        self.figure.canvas.draw()
+
 
 
 #------------------------ External Functions ---------------------------------------------

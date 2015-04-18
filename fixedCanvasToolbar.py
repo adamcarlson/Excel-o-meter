@@ -14,7 +14,7 @@ class ActuallyWorkingFigureCanvas(FigureCanvasTkAgg):
         t1,t2,w,h = self.figure.bbox.bounds
         w, h = int(w), int(h)
         self._tkcanvas = Canvas(
-            master=master, width=w, height=h, borderwidth=4)
+            master=master, width=w, height=h, borderwidth=0)
         self._tkphoto = PhotoImage(
             master=self._tkcanvas, width=w, height=h)
         self._tkcanvas.create_image(w//2, h//2, image=self._tkphoto)
@@ -84,15 +84,16 @@ class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
         self.frame = Frame(parent)
         NavigationToolbar2TkAgg.__init__(self, canvas, self.frame)
         self.pButton = None
+        Frame.pack(self)
 
         self.hide()
 
     def hide(self, *args):
-        Frame.grid_remove(self)
+        Frame.grid_remove(self.frame)
         self.releaseButton()
 
-    def show(self, rowNumber):
-        Frame.grid(self, row=rowNumber, sticky='nsew')
+    def show(self, row):
+        Frame.grid(self.frame, row=2, column=0, sticky='nsew')
 
     def pan(self, *args):
         self.pButton = 'pan'

@@ -22,7 +22,7 @@ import math
 
 
 from fixedCanvasToolbar import ActuallyWorkingFigureCanvas, ActuallyWorkingToolbar
-from extraUIElements import TabFrame, TitleLogo, LinkButton, GraphContainer
+from extraUIElements import TabFrame, TitleLogo, LinkButton, ToggleButtonFrame
 import sensorData as sd
 
 # Constants:
@@ -34,9 +34,16 @@ colors = {
     'textHover' : '#00D5FF',
     'textNormal' : '#D9D9D9',
     'textSelected' : '#00D5FF',     # Usually the same as textHover
+
     'bgNormal': '#3B3B3B',
     'bgSecondary' : '#2B2B2B',
-    'textField' : '#D9D9D9'
+    'textField' : '#D9D9D9',
+
+    'graphBg' : '#D9D9D9',
+    'graphFg' : 'black',
+    'graphX' : 'blue',
+    'graphY' : 'green',
+    'graphZ' : 'red',
 }
 
 
@@ -77,6 +84,7 @@ class MainApp(Tk):
         menuBar.add_cascade(label='Help', menu=helpMenu)
 
     def changeFrame(self, newFrame):
+        self.currentFrame.kill()
         self.currentFrame.pack_forget()
         self.currentFrame.destroy()
         self.currentFrame = newFrame(self)
@@ -106,8 +114,8 @@ class MainApp(Tk):
     def fOnExit(self):
         if sensorData.saved[1] == False:
             if(self.showSaveDialogue()):
+                self.currentFrame.kill()
                 self.fSave()
-        self.currentFrame.kill()
         sys.exit()
 
     #Edit Menu
@@ -216,71 +224,34 @@ class SensorView(Frame):
         self.sensorNum = sensor - 1
         Frame.__init__(self, self.parent, bg=colors['bgSecondary'])
         self.initUI()
-        self.rowconfigure(1, weight=1)
-        self.rowconfigure(2, weight=1)
-        self.rowconfigure(3, weight=1)
+        self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
     def initUI(self):
-        temp = [ActuallyWorkingFigureCanvas(sensorData.plotList[self.sensorNum][i], self) for i in range(3)]
-        self.graphList = [GraphContainer(i+1, item, ActuallyWorkingToolbar(item, self)) for i, item in enumerate(temp)]
+        self.canvas = ActuallyWorkingFigureCanvas(sensorData.plotList[self.sensorNum].figure, self)
+        self.toolbar = ActuallyWorkingToolbar(self.canvas, self)
+        sensorData.grabHistory(self.sensorNum, self.toolbar._views, self.toolbar._positions)
+        sensorData.setHistory(self.sensorNum, self.toolbar)
 
-        for item in self.graphList:
-            self.drawGraph(item)
+        self.canvas.show()
+        self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew')
+        self.canvas.get_tk_widget().configure(bg=colors['graphBg'], highlightthickness=0)
 
-    def drawGraph(self, item):
-        item.canvas.show()
-        item.canvas.get_tk_widget().grid(row=item.graphNumber, column=0, sticky='nsew', pady=0, padx=0)
-        item.canvas.get_tk_widget().configure(bg=colors['bgSecondary'], fg=colors['textNormal'])
-        item.canvas.get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=item))
+        ToggleButtonFrame(self, sensorData.plotList[self.sensorNum], colors).grid(row=1, column=0, sticky='nsew')
 
-    def packer(self, alreadyPacked):
-        for item in self.graphList:
-            if item.graphNumber != alreadyPacked.graphNumber:
-                item.canvas.get_tk_widget().grid(row=item.graphNumber, column=0, sticky='nsew')
+        self.toolbar.frame.grid(row=2, column=0, sticky='nsew')
+        self.toolbar.frame.configure(bg=colors['graphBg'])
 
-    def unpacker(self, leaveOut):
-        for item in self.graphList:
-            if item.graphNumber != leaveOut.graphNumber:
-                item.canvas._tkcanvas.grid_remove()
-
-    def expand(self, event, item):
-        self.unpacker(item)
-        item.canvas.rebinder()
-
-        self.buttonFrame = Frame(self, height=25)
-        self.buttonFrame.grid(row=0, column=0, sticky='nsew')
-
-        if item.graphNumber != 1:
-            LinkButton(self.buttonFrame, "Previous Graph", self.changeGraph, colors, commandParameters=(item, self.graphList[item.graphNumber-2])).grid(row=0, column=0, sticky='nsew')
-        if item.graphNumber != 3:
-            LinkButton(self.buttonFrame, "Next Graph", self.changeGraph, colors, commandParameters=(item, self.graphList[item.graphNumber])).grid(row=0, column=2, sticky='nsew')
-
-        LinkButton(self.buttonFrame, "Full View", self.fullView, colors, commandParameters=item).grid(row=0, column=1, sticky='nsew')
-        #filterButton = LinkButton(self.buttonFrame, "Apply Filter", self.changeGraph, colors, item)
-
-        item.toolbar.update()
-        item.toolbar.show(item.graphNumber)
-
-    def changeGraph(self, vars):
-        currentItem, nextItem = vars
-        self.fullView(currentItem)
-        self.expand(None, nextItem)
-
-    def fullView(self, item):
-        self.buttonFrame.grid_remove()
-        item.toolbar.hide()
-        item.canvas.get_tk_widget().bind("<Button-1>", functools.partial(self.expand, item=item))
-        self.packer(item)
+    def changePlot(self, plot):
+        pass
 
     def filterGraph(self, itemNum):
         pass
 
     def kill(self):
-        # if something changed saved[1] = False
         pass
 
 if __name__ == '__main__':
-    sensorData = sd.SensorData()
+    sensorData = sd.SensorData(colors)
     app = MainApp()
     app.mainloop()

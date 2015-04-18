@@ -8,15 +8,10 @@ from functools import partial
 
 class LinkButton(Label):
     def __init__(self, master, text, command, colorScheme, **kwargs):
-        width = kwargs.get('width', 0)
-        height = kwargs.get('height', 0)
-        if width == 0 and height == 0:
-            Label.__init__(self, master, text=text)
-        else:
-            Label.__init__(self, master, text=text, width=width, height=height)
+        self.commandParameters = kwargs.pop('commandParameters', None)
+        Label.__init__(self, master, kwargs, text=text)
         self.colorScheme = colorScheme
         self.command = command
-        self.commandParameters = kwargs.get('commandParameters', None)
         self.text = text
         self.drawButton()
 
@@ -25,7 +20,7 @@ class LinkButton(Label):
         self.config(fg=self.colorScheme['textClickable'], bg=self.colorScheme['bgNormal'], font=("Calibri", 16))
         self.bind("<Enter>", partial(self.color_config, self, self.colorScheme['textHover']))
         self.bind("<Leave>", partial(self.color_config, self, self.colorScheme['textClickable']))
-        self.bind("<Button-1>", partial(self.runCommand))
+        self.bind("<Button-1>", self.runCommand)
 
     def runCommand(self, widget):
         if self.commandParameters != None:
@@ -36,6 +31,107 @@ class LinkButton(Label):
     def color_config(self, widget, color, event):
         if not self.selected:
             widget.configure(foreground=color)
+
+class ToggleButton(Label):
+    def __init__(self, parent, command, colorScheme, **kwargs):
+        self.commandParameters = kwargs.pop('commandParameters', None)
+        self.dcCommand = kwargs.pop('dcCommand', command)
+        self.dcCommandParameters = kwargs.pop('dcCommandParameters', self.commandParameters)
+        self.textColor = kwargs.pop('textColor', colorScheme['textNormal'])
+        self.parent = parent
+        self.command = command
+        self.colorScheme = colorScheme
+        Label.__init__(self, self.parent, kwargs)
+        self.drawButton()
+
+    def drawButton(self):
+        self.config(font=("Calibri", 16))
+        self.config(fg=self.colorScheme['graphFg'], bg=self.colorScheme['graphBg'])
+        self.bind("<Button-1>", self.runClick)
+        if self.dcCommand is not None:
+            self.bind("<Double-Button-1>", self.runDoubleClick)
+            self.pressed = False
+        self.runClick(None)
+
+    def unSelect(self):
+        self.pressed = False
+        self.config(fg=self.colorScheme['graphFg'])
+        self.bind("<Enter>", partial(self.color_config, self, self.textColor))
+        self.bind("<Leave>", partial(self.color_config, self, self.colorScheme['graphFg']))
+
+    def select(self):
+        self.pressed = True
+        self.config(fg=self.textColor)
+        self.unbind_all(['<Enter>', '<Leave>'])
+
+    def runClick(self, event):
+        if self.pressed:
+            self.unSelect()
+        else:
+            self.select()
+
+        if self.commandParameters is not None:
+            self.command(self, self.commandParameters)
+        else:
+            self.command(self)
+
+    def runDoubleClick(self, event):
+        if self.pressed:
+            if self.dcCommandParameters is not None:
+                self.dcCommand(self, self.dcCommandParameters)
+            else:
+                self.dcCommand(self)
+        else:
+            self.runClick(None)
+            if self.dcCommandParameters is not None:
+                self.dcCommand(self, self.dcCommandParameters)
+            else:
+                self.dcCommand(self)
+
+    def color_config(self, widget, color, event):
+        if not self.pressed:
+            widget.configure(foreground=color)
+
+class ToggleButtonFrame(Frame):
+    def __init__(self, parent, figureClass, colorScheme):
+        self.parent = parent
+        self.figureClass = figureClass
+        self.colorScheme = colorScheme
+        Frame.__init__(self, parent)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.initUI()
+
+    def initUI(self):
+        self.xButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='X Axis',
+                                    textColor=self.colorScheme['graphX'], commandParameters='X',
+                                    dcCommand=self.doubleClickCommand, height=1)
+        self.xButton.grid(row=0, column=0, sticky='nsew')
+
+        self.yButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='Y Axis',
+                                    textColor=self.colorScheme['graphY'], commandParameters='Y',
+                                    dcCommand=self.doubleClickCommand, height=1)
+        self.yButton.grid(row=0, column=1, sticky='nsew')
+
+        self.zButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='Z Axis',
+                                    textColor=self.colorScheme['graphZ'], commandParameters='Z',
+                                    dcCommand=self.doubleClickCommand, height=1)
+        self.zButton.grid(row=0, column=2, sticky='nsew')
+
+    def singleClickCommand(self, button, identifier):
+        if button.pressed:
+            self.figureClass.showSubplot(identifier)
+        else:
+            self.figureClass.hideSubplot(identifier)
+
+    def doubleClickCommand(self, button, identifier):
+        plots = ['X', 'Y', 'Z']
+        buttons = [self.xButton, self.yButton, self.zButton]
+        for i, item in enumerate(plots):
+            if item != identifier:
+                buttons[i].unSelect()
+                self.figureClass.hideSubplot(item)
 
 class TitleLogo(Label):
     def __init__(self, master, image, colorScheme):
