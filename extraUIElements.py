@@ -28,9 +28,9 @@ class LinkButton(Label):
         else:
             self.command()
 
-    def color_config(self, widget, color, event):
+    def color_config(self, widget, fg, event):
         if not self.selected:
-            widget.configure(foreground=color)
+            widget.configure(fg=fg)
 
 class ToggleButton(Label):
     def __init__(self, parent, command, colorScheme, **kwargs):
@@ -144,18 +144,20 @@ class TabFrame(Frame):
         self.parent = parent
         self.colorScheme = colorScheme # dictionary {fg1, fg2, bg, selected fg, selected bg}
         self.tabs = tabs    # list of tuples [(tabName, tabFrame), ...]
-        Frame.__init__(self, self.parent, bg=self.colorScheme['bgNormal'])
+        Frame.__init__(self, self.parent, bg=self.colorScheme['bgSecondary'])
         self.initUIOutline()
         self.initUI()
-        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
 
     def initUIOutline(self):
         self.buttonFrame = Frame(self, bg=self.colorScheme['bgNormal'], width=200)
         self.buttonFrame.grid(row=0, column=0, sticky='nsew')
 
+        Frame(self, bg=self.colorScheme['bgSecondary'], width=5).grid(row=0, column=1, sticky='nsew')
+
         self.contentFrame = Frame(self, bg=self.colorScheme['bgSecondary'])
-        self.contentFrame.grid(row=0, column=1, sticky='nsew', ipadx=5, ipady=5)
+        self.contentFrame.grid(row=0, column=2, sticky='nsew')# ipadx=5, ipady=5)
 
     def initUI(self):
         self.tabButtons = [TabButton(self.buttonFrame, item[0], self.colorScheme, self.changeTabs, item[1], 20, 2) for i, item in enumerate(self.tabs)]
@@ -181,7 +183,7 @@ class TabFrame(Frame):
             self.currentFrame.kill()
             self.currentFrame.pack_forget()
         self.currentFrame = displayFrame(self.contentFrame, sensor)
-        self.currentFrame.pack(side=TOP, fill=BOTH, expand=1, padx=10, pady=10)
+        self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)#, padx=10, pady=10)
 
     def kill(self):
         self.currentFrame.kill()
@@ -194,6 +196,13 @@ class TabButton(LinkButton):
         self.text = text
         LinkButton.__init__(self, master, self.text, self.command, self.colorScheme, width=width, height=height)
         self.drawButton()
+
+    def drawButton(self):
+        self.selected = False
+        self.config(fg=self.colorScheme['textClickable'], bg=self.colorScheme['bgNormal'], font=("Calibri", 16))
+        self.bind("<Enter>", partial(self.color_config, self, self.colorScheme['textHover']))
+        self.bind("<Leave>", partial(self.color_config, self, self.colorScheme['textClickable']))
+        self.bind("<Button-1>", self.runCommand)
 
     def runCommand(self, widget):
         self.command(self)

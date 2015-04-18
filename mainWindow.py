@@ -181,23 +181,33 @@ class RunView(Frame):
     def initUI(self):
         self.parent.title("Excelometer - {}".format(sensorData.runData['runTitle']))
 
+        logoFrame = Frame(self, bg=colors['bgNormal'], width=231)
+        logoFrame.grid(row=0, column=0, rowspan=3, sticky='nsew')
+        self.logo = PhotoImage(file='eomIcon.PNG')
+        Label(logoFrame, bg=colors['bgNormal'], image=self.logo, width=227).pack(side=TOP, fill=BOTH, expand=0)
+        Frame(self, bg=colors['bgSecondary'], width=5).grid(row=0, column=1, rowspan=3, sticky='nsew')
+
         runTitle = Label(self, text=sensorData.runData['runTitle'], fg=colors['textNormal'], bg=colors['bgNormal'], height=1, font=("Calibri", 30))
-        runTitle.grid(row=0, column=0, sticky='nw', columnspan=3, ipadx=10)
+        runTitle.grid(row=0, column=2, sticky='nw', columnspan=2, ipadx=10)
 
         lineFrameH1 = Frame(self, bg=colors['bgSecondary'], height=2)
-        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='new')
+        lineFrameH1.grid(row=1, column=2, columnspan=2, sticky='new')
 
         timeLabel = Label(self, text='Run Durration: {}'.format(sensorData.runData['runTime']), fg=colors['textNormal'], bg=colors['bgNormal'], font=("Calibri", 16))
-        timeLabel.grid(row=2, column=0, sticky='nsw')
+        timeLabel.grid(row=2, column=2, sticky='nsw', ipadx=10)
         dateLabel = Label(self, text=sensorData.runData['runDate'], fg=colors['textNormal'], bg=colors['bgNormal'], font=("Calibri", 16))
-        dateLabel.grid(row=2, column=2, sticky='nse')
+        dateLabel.grid(row=2, column=3, sticky='nse', ipadx=10)
 
         tabs = [('Notes', NoteView)]
         for i in range(sensorData.numberOfSensors):
             tabs.append(('Sensor {}'.format(i+1), SensorView))
 
-        self.content = TabFrame(self, colors, tabs)
-        self.content.grid(row=3, column=0, sticky='nsew', columnspan=3)
+        self.contentFrame = Frame(self, bg=colors['bgSecondary'])
+        self.contentFrame.grid(row=3, column=0, sticky='nsew', columnspan=4)
+
+        self.content = TabFrame(self.contentFrame, colors, tabs)
+        self.content.pack(side=TOP, fill=BOTH, expand=1, padx=5, pady=5)
+        #self.content.grid(row=3, column=0, sticky='nsew', columnspan=3, padx=10, pady=10)
 
     def kill(self):
         self.content.kill()
@@ -241,6 +251,8 @@ class SensorView(Frame):
 
         self.toolbar.frame.grid(row=2, column=0, sticky='nsew')
         self.toolbar.frame.configure(bg=colors['graphBg'])
+        self.toolbar.configure(bg=colors['graphBg'])
+        self.toolbar._message_label.configure(bg=colors['graphBg'])
 
     def changePlot(self, plot):
         pass
