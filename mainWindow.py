@@ -91,7 +91,8 @@ class MainApp(Tk):
         self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
 
     def showSaveDialogue(self):
-        return messagebox.askyesno("Excelometer", "Unsaved changes have been made.\nWould you like to save before exiting?")
+        return messagebox.askyesno("Excelometer", "Unsaved changes have been made."
+                                                  "\nWould you like to save before exiting?")
 
     #File Menu
     def fImportData(self):

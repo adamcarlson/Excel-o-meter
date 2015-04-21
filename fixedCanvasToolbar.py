@@ -3,8 +3,9 @@ __author__ = 'Adam Carlson'
 import matplotlib
 matplotlib.use('TkAgg')
 
-from tkinter import Frame, Canvas, PhotoImage, TOP, X
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg, NavigationToolbar2TkAgg, NavigationToolbar2
+from tkinter import Frame, Canvas, PhotoImage
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg, NavigationToolbar2
 
 class ActuallyWorkingFigureCanvas(FigureCanvasTkAgg):
     def __init__(self, figure, master=None, resize_callback=None):
