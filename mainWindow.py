@@ -1,29 +1,17 @@
 __author__ = 'Adam Carlson'
 
-import sys
+
 import matplotlib
 matplotlib.use('TkAgg')
 
 from tkinter import messagebox
 from tkinter import *
-from functools import partial
-
-from tkinter.filedialog import askopenfilename
-
-from numpy import arange, sin, pi, dtype, fromfile
-import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.backend_bases import key_press_handler
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-import matplotlib.animation as ani
-import functools
-import math
-
-
 from fixedCanvasToolbar import ActuallyWorkingFigureCanvas, ActuallyWorkingToolbar
 from extraUIElements import TabFrame, TitleLogo, LinkButton, ToggleButtonFrame
+from extraUIElements import RecentFilesList, QuickSelectList
 import sensorData as sd
+from settingsContainer import Settings
+from os import path
 
 # Constants:
 FRAME, CANVAS, TOOLBAR = 0, 1, 2
@@ -51,8 +39,10 @@ class MainApp(Tk):
     def __init__(self):
         Tk.__init__(self)
         self.protocol("WM_DELETE_WINDOW", self.fOnExit)
-
-        self.isSensorView = 0
+        if path.isfile('settings.dat'):
+            self.recentFiles = Settings(self, filename='settings.dat')
+        else:
+            self.recentFiles = Settings(self)
 
         self.makeMenuBar()
 
@@ -102,18 +92,20 @@ class MainApp(Tk):
                 self.fSave()
 
     #File Menu
-    def fImportData(self):
+    def fImportData(self, filename=''):
         self.save_if_needs_saving()
-        sensorData.importData()
+        sensorData.importData(filename)
+        self.recentFiles.lastFolderPath = '/'.join(sensorData.filename.split('/')[:-1])
+        print(self.recentFiles.lastFolderPath)
         self.changeFrame(RunView)
 
-    def fOpen(self):
+    def fOpen(self, filename=''):
         self.save_if_needs_saving()
-        sensorData.newData(sd.openSaveFile())
+        sensorData.newData(sd.openSaveFile(self.recentFiles, filename))
         self.changeFrame(RunView)
 
     def fSaveAs(self):
-        sd.saveFile(sensorData)
+        sd.saveFile(sensorData, self.recentFiles)
 
         if hasattr(self.currentFrame, 'runTitle'):
             self.currentFrame.runTitle.config(text=sensorData.runData['runTitle'])
@@ -122,10 +114,11 @@ class MainApp(Tk):
         if sensorData.saved[0] == False:
             self.fSaveAs()
         elif sensorData.saved[1] == False:
-            sd.saveFile(sensorData, sensorData.runData['runTitle'])
+            sd.saveFile(sensorData, self.recentFiles, sensorData.runData['runFileLocation'])
 
     def fOnExit(self):
         self.save_if_needs_saving()
+        self.recentFiles.save_settings()
         sys.exit()
 
     #Edit Menu
@@ -141,6 +134,9 @@ class HomeWindow(Frame):
         Frame.__init__(self, parent, bg=colors['bgNormal'])
         self.parent = parent
         self.parent.resizable(0, 0)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.rowconfigure( 3, weight=1)
         self.initUI()
 
     def initUI(self):
@@ -149,19 +145,19 @@ class HomeWindow(Frame):
         TitleLogo(self, 'elogo.png', colors).grid(row=0, column=0, columnspan=3)
 
         lineFrameH1 = Frame(self, bg=colors['bgSecondary'], height=2, width=1000)
-        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nw')
+        lineFrameH1.grid(row=1, column=0, columnspan=3, sticky='nsew')
 
         lineFrameV1 = Frame(self, bg=colors['bgSecondary'], height=500, width=2)
-        lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='n')
+        lineFrameV1.grid(row=2, column=1, rowspan=2, sticky='nsew')
 
-        startFrame = Frame(self, bg=colors['bgNormal'], height=200)
-        startFrame.grid(row=2, column=0, sticky='nw')
+        startFrame = Frame(self, bg=colors['bgNormal'])
+        startFrame.grid(row=2, column=0, sticky='nsew')
 
         quickSelectFrame = Frame(self, bg=colors['bgNormal'])
-        quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nw')
+        quickSelectFrame.grid(row=2, column=2, rowspan=2, sticky='nsew')
 
-        recentsFrame = Frame(self, bg=colors['bgNormal'], width=100, height=100)
-        recentsFrame.grid(row=3, column=0, padx=2, pady=2, sticky='nw')
+        recentsFrame = Frame(self, bg=colors['bgNormal'])
+        recentsFrame.grid(row=3, column=0, padx=2, pady=10, sticky='nsew')
 
         Label(startFrame, text="Start", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
 
@@ -170,9 +166,11 @@ class HomeWindow(Frame):
         openButton = LinkButton(startFrame, "Open...", self.parent.fOpen, colors)
         openButton.grid(row=2, sticky='w', padx=40)
 
-        Label(recentsFrame, text="Recent", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
+        Label(recentsFrame, text="Recents", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
+        RecentFilesList(recentsFrame, self.parent.recentFiles, colors).grid(row=1, sticky='nw')
 
         Label(quickSelectFrame, text="Quick Select", font=("Calibri", 20), bg=colors['bgNormal'], fg=colors['textNormal']).grid(row=0, sticky='nw', padx=40, pady=5)
+        QuickSelectList(quickSelectFrame, self.parent.recentFiles, colors).grid(row=1, sticky='nw')
 
     def kill(self):
         pass

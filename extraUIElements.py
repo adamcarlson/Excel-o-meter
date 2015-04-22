@@ -32,6 +32,39 @@ class LinkButton(Label):
         if not self.selected:
             widget.configure(fg=fg)
 
+class RecentFilesList(Frame):
+    def __init__(self, parent, settingsObject, colorScheme):
+        Frame.__init__(self, parent, bg=colorScheme['bgNormal'])
+        self.settingsObject = settingsObject
+        self.parent = parent
+        self.colorScheme = colorScheme
+        self.initUI()
+
+    def initUI(self):
+        for i, item in enumerate(self.settingsObject.filePaths):
+            LinkButton(self, item.split('.')[0].split('/')[-1],self.open,
+                       self.colorScheme, commandParameters=item).grid(row=i, sticky='nw', padx=40)
+
+    def open(self, filePath):
+        self.settingsObject.root.fOpen(filePath)
+
+class QuickSelectList(Frame):
+    def __init__(self, parent, settingsObject, colorScheme):
+        Frame.__init__(self, parent, bg=colorScheme['bgNormal'])
+        self.settingsObject = settingsObject
+        self.colorScheme = colorScheme
+        self.initUI()
+
+    def initUI(self):
+        for i, item in enumerate(self.settingsObject.get_quick_files()):
+            item = item.replace('\\', '/')
+            LinkButton(self, item.split('/')[-1],self.open,
+                       self.colorScheme, commandParameters=item).grid(row=i, sticky='nw', padx=40)
+
+    def open(self, filename):
+        self.settingsObject.root.fImportData(filename)
+
+
 class ToggleButton(Label):
     def __init__(self, parent, command, colorScheme, **kwargs):
         self.commandParameters = kwargs.pop('commandParameters', None)

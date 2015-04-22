@@ -2,7 +2,6 @@ __author__ = 'Adam Carlson'
 
 
 import tkinter.filedialog as fd
-from collections import namedtuple
 import numpy as np
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
@@ -18,8 +17,13 @@ class SensorData(object):
         self.saved = [False, True]     # [been saved before, currently saved]
         self.runData = {}
 
-    def importData(self):
-        self.filename = fd.askopenfilename(filetypes=[('Excel-o-meter Data Dump File','*.sac')])
+    def importData(self, filename=''):
+        if filename is '':
+            self.filename = fd.askopenfilename(filetypes=[('Excel-o-meter Data Dump File','*.sac')])
+            self.runData['runTitle'] = self.filename.split('.')[0].split('/')[-1]
+        else:
+            self.filename = filename
+            self.runData['runTitle'] = self.filename.split('.')[0].split('\\')[-1]
         if self.filename.split('.')[-1] == 'sac':
             self.numberOfSensors = self.runUnpacker(self.filename)
             record_dtype = np.dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
@@ -31,7 +35,7 @@ class SensorData(object):
 
             self.plotList = [FigurePlot(item, self.t, self.colorScheme) for item in self.data]
 
-            self.runData['runTitle'] = self.filename.split('.')[0].split('/')[-1]
+            self.runData['runFileLocation'] = self.runData['runTitle'] + '.esf'
             self.runData['runTime'] = str(timedelta(milliseconds=(self.intervalCount * self.interval)))
             self.runData['runDate'] = datetime.now().strftime('%Y-%m-%d')
             self.runData['runTimeMS'] = self.intervalCount * self.interval
@@ -129,26 +133,31 @@ class FigurePlot(object):
 
 #------------------------ External Functions ---------------------------------------------
 
-def openSaveFile(filename=''):
+def openSaveFile(recentsObject, filename=''):
     if filename == '':
-        file = open(fd.askopenfilename(filetypes=[('Excel-o-meter Save File','*.esf')]), 'rb')
+        ofFileName = fd.askopenfilename(filetypes=[('Excel-o-meter Save File','*.esf')])
+        file = open(ofFileName, 'rb')
     else:
-        file = open(filename, 'rb')
+        ofFileName = filename
+        file = open(ofFileName, 'rb')
 
     sensorDataObject = pickle.Unpickler(file).load()
     file.close()
+    recentsObject.add_recent(ofFileName)
     return(sensorDataObject)
 
-def saveFile(sensorDataObject, filename=''):
+def saveFile(sensorDataObject, recentsObject, filename=''):
     if filename == '':
         sfFileName = fd.asksaveasfilename(filetypes=[("Excelometer Save Files", "*.esf" ),("All files", "*")], defaultextension='.esf')
         file = open(sfFileName, 'wb')
+        sensorDataObject.runData['runFileLocation'] = sfFileName
         sensorDataObject.runData['runTitle'] = sfFileName.split('.')[0].split('/')[-1]
     else:
-        sfFileName = filename + '.esf'
+        sfFileName = filename
         file = open(sfFileName, 'wb')
 
     sensorDataObject.saved = [True, True]
     pickle.Pickler(file).dump(sensorDataObject)
     file.close()
+    recentsObject.add_recent(sfFileName)
     return
