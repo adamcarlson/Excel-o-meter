@@ -55,6 +55,8 @@ class MainApp(Tk):
         self.isSensorView = 0
 
         self.makeMenuBar()
+
+    def run(self):
         self.currentFrame = HomeWindow(self)
         self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)
 
@@ -93,18 +95,28 @@ class MainApp(Tk):
     def showSaveDialogue(self):
         return messagebox.askyesno("Excelometer", "Unsaved changes have been made."
                                                   "\nWould you like to save before exiting?")
+    def save_if_needs_saving(self):
+        self.currentFrame.kill()
+        if sensorData.saved[1] == False:
+            if(self.showSaveDialogue()):
+                self.fSave()
 
     #File Menu
     def fImportData(self):
+        self.save_if_needs_saving()
         sensorData.importData()
         self.changeFrame(RunView)
 
     def fOpen(self):
+        self.save_if_needs_saving()
         sensorData.newData(sd.openSaveFile())
         self.changeFrame(RunView)
 
     def fSaveAs(self):
         sd.saveFile(sensorData)
+
+        if hasattr(self.currentFrame, 'runTitle'):
+            self.currentFrame.runTitle.config(text=sensorData.runData['runTitle'])
 
     def fSave(self):
         if sensorData.saved[0] == False:
@@ -113,15 +125,12 @@ class MainApp(Tk):
             sd.saveFile(sensorData, sensorData.runData['runTitle'])
 
     def fOnExit(self):
-        if sensorData.saved[1] == False:
-            if(self.showSaveDialogue()):
-                self.currentFrame.kill()
-                self.fSave()
+        self.save_if_needs_saving()
         sys.exit()
 
     #Edit Menu
     def eFilter(self):
-        pass
+        sensorData.filter()
 
     # Help Menu
     def hHelp(self):
@@ -188,8 +197,8 @@ class RunView(Frame):
         Label(logoFrame, bg=colors['bgNormal'], image=self.logo, width=227).pack(side=TOP, fill=BOTH, expand=0)
         Frame(self, bg=colors['bgSecondary'], width=5).grid(row=0, column=1, rowspan=3, sticky='nsew')
 
-        runTitle = Label(self, text=sensorData.runData['runTitle'], fg=colors['textNormal'], bg=colors['bgNormal'], height=1, font=("Calibri", 30))
-        runTitle.grid(row=0, column=2, sticky='nw', columnspan=2, ipadx=10)
+        self.runTitle = Label(self, text=sensorData.runData['runTitle'], fg=colors['textNormal'], bg=colors['bgNormal'], height=1, font=("Calibri", 30))
+        self.runTitle.grid(row=0, column=2, sticky='nw', columnspan=2, ipadx=10)
 
         lineFrameH1 = Frame(self, bg=colors['bgSecondary'], height=2)
         lineFrameH1.grid(row=1, column=2, columnspan=2, sticky='new')
@@ -248,12 +257,15 @@ class SensorView(Frame):
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew')
         self.canvas.get_tk_widget().configure(bg=colors['graphBg'], highlightthickness=0)
 
-        ToggleButtonFrame(self, sensorData.plotList[self.sensorNum], colors).grid(row=1, column=0, sticky='nsew')
-
-        self.toolbar.frame.grid(row=2, column=0, sticky='nsew')
+        self.toolbar.frame.grid(row=1, column=0, sticky='nsew', ipadx=1)
         self.toolbar.frame.configure(bg=colors['graphBg'])
         self.toolbar.configure(bg=colors['graphBg'])
         self.toolbar._message_label.configure(bg=colors['graphBg'])
+
+        Frame(self, height=5, bg=colors['bgSecondary']).grid(row=2, column=0, sticky='nsew')
+
+        self.buttons = ToggleButtonFrame(self, sensorData.plotList[self.sensorNum], sensorData, colors)
+        self.buttons.grid(row=3, column=0, sticky='nsew')
 
     def changePlot(self, plot):
         pass
@@ -262,9 +274,17 @@ class SensorView(Frame):
         pass
 
     def kill(self):
-        pass
+        self.buttons.kill()
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     sensorData = sd.SensorData(colors)
     app = MainApp()
+    app.run()
     app.mainloop()

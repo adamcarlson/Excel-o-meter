@@ -35,6 +35,7 @@ class LinkButton(Label):
 class ToggleButton(Label):
     def __init__(self, parent, command, colorScheme, **kwargs):
         self.commandParameters = kwargs.pop('commandParameters', None)
+        self.on = kwargs.pop('pressed', True)
         self.dcCommand = kwargs.pop('dcCommand', command)
         self.dcCommandParameters = kwargs.pop('dcCommandParameters', self.commandParameters)
         self.textColor = kwargs.pop('textColor', colorScheme['textNormal'])
@@ -52,16 +53,18 @@ class ToggleButton(Label):
             self.bind("<Double-Button-1>", self.runDoubleClick)
             self.pressed = False
         self.runClick(None)
+        if not self.on:
+            self.runClick(None)
 
     def unSelect(self):
         self.pressed = False
-        self.config(fg=self.colorScheme['graphFg'])
+        self.config(fg=self.colorScheme['graphFg'], bg=self.colorScheme['graphBg'])
         self.bind("<Enter>", partial(self.color_config, self, self.textColor))
         self.bind("<Leave>", partial(self.color_config, self, self.colorScheme['graphFg']))
 
     def select(self):
         self.pressed = True
-        self.config(fg=self.textColor)
+        self.config(fg=self.textColor, bg=self.colorScheme['bgNormal'])
         self.unbind_all(['<Enter>', '<Leave>'])
 
     def runClick(self, event):
@@ -93,31 +96,49 @@ class ToggleButton(Label):
             widget.configure(foreground=color)
 
 class ToggleButtonFrame(Frame):
-    def __init__(self, parent, figureClass, colorScheme):
+    def __init__(self, parent, figureClass, sensorData, colorScheme):
         self.parent = parent
         self.figureClass = figureClass
+        self.sensorData = sensorData
         self.colorScheme = colorScheme
         Frame.__init__(self, parent)
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
+
+        for i in range(5):
+            self.columnconfigure(i*2, weight=1)
+
         self.initUI()
 
     def initUI(self):
+
+        for i in range(8):
+            if i % 2 == 1:
+                Frame(self, width=2, bg=self.colorScheme['bgSecondary']).grid(row=0, column=i, sticky='nsew')
+
+
+        LinkButton(self, 'Show All', self.show_all, self.colorScheme).grid(row=0, column=0, sticky='nsew')
+
         self.xButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='X Axis',
                                     textColor=self.colorScheme['graphX'], commandParameters='X',
-                                    dcCommand=self.doubleClickCommand, height=1)
-        self.xButton.grid(row=0, column=0, sticky='nsew')
+                                    dcCommand=self.doubleClickCommand, height=1, pressed=self.figureClass.toggled[0])
+        self.xButton.grid(row=0, column=2, sticky='nsew')
 
         self.yButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='Y Axis',
                                     textColor=self.colorScheme['graphY'], commandParameters='Y',
-                                    dcCommand=self.doubleClickCommand, height=1)
-        self.yButton.grid(row=0, column=1, sticky='nsew')
+                                    dcCommand=self.doubleClickCommand, height=1, pressed=self.figureClass.toggled[1])
+        self.yButton.grid(row=0, column=4, sticky='nsew')
 
         self.zButton = ToggleButton(self, self.singleClickCommand, self.colorScheme, text='Z Axis',
                                     textColor=self.colorScheme['graphZ'], commandParameters='Z',
-                                    dcCommand=self.doubleClickCommand, height=1)
-        self.zButton.grid(row=0, column=2, sticky='nsew')
+                                    dcCommand=self.doubleClickCommand, height=1, pressed=self.figureClass.toggled[2])
+        self.zButton.grid(row=0, column=6, sticky='nsew')
+
+        LinkButton(self, 'Add Filter', self.sensorData.filter, self.colorScheme).grid(row=0, column=8, sticky='nsew')
+
+    def show_all(self):
+        self.figureClass.show_all()
+        self.xButton.select()
+        self.yButton.select()
+        self.zButton.select()
 
     def singleClickCommand(self, button, identifier):
         if button.pressed:
@@ -132,6 +153,13 @@ class ToggleButtonFrame(Frame):
             if item != identifier:
                 buttons[i].unSelect()
                 self.figureClass.hideSubplot(item)
+
+    def kill(self):
+        newToggled = (self.xButton.pressed, self.yButton.pressed, self.zButton.pressed)
+        if self.figureClass.toggled != newToggled:
+            self.figureClass.toggled = newToggled
+            self.sensorData.saved[1] = False
+
 
 class TitleLogo(Label):
     def __init__(self, master, image, colorScheme):

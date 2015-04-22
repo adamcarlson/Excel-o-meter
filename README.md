@@ -11,3 +11,6 @@ Requirements:
 - VS C++ 2010
 - numpy
 - matplotlib
+
+
+[Microsoft Visual C++ 2010 Redistributable Package (x86)]

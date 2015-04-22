@@ -2,6 +2,7 @@ __author__ = 'Adam Carlson'
 
 
 import tkinter.filedialog as fd
+from collections import namedtuple
 import numpy as np
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
@@ -77,12 +78,16 @@ class SensorData(object):
         self.intervalCount = count
         return self.intervalCount
 
+    def filter(self):
+        pass
+
 class FigurePlot(object):
     def __init__(self, sensorList, t, colorScheme):
         self.sensorList = sensorList
         self.t = t
         self.colorScheme = colorScheme
         self.makePlots()
+        self.toggled = (1,1,1)
 
     def makePlots(self):
         self.figure = plt.figure(figsize=(1,1), dpi=100, frameon=False, facecolor=self.colorScheme['graphBg'])
@@ -111,6 +116,12 @@ class FigurePlot(object):
             self.lines[1].set_visible(True)
         elif identifier == 'Z':
             self.lines[2].set_visible(True)
+
+        self.figure.canvas.draw()
+
+    def show_all(self):
+        for item in self.lines:
+            item.set_visible(True)
 
         self.figure.canvas.draw()
 
