@@ -225,7 +225,7 @@ class TabFrame(Frame):
         for i, item in enumerate(self.tabButtons):
             item.grid(row=i, column=0, sticky='nsew')
 
-        self.changeTabs(self.tabButtons[0])
+        self.changeTabs(self.tabButtons[1])
 
     def changeTabs(self, tabButton):
         for item in self.tabButtons:

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 from datetime import datetime, timedelta
 import pickle
+import xlsxwriter
 
 class SensorData(object):
     def __init__(self, colorScheme, numberOfSensors = 3, Hz=800):
@@ -86,8 +87,9 @@ class SensorData(object):
         pass
 
 class FigurePlot(object):
-    def __init__(self, sensorList, t, colorScheme):
-        self.sensorList = sensorList
+    def __init__(self, axisList, t, colorScheme):
+        self.originalAxisList = axisList
+        self.axisList = axisList
         self.t = t
         self.colorScheme = colorScheme
         self.makePlots()
@@ -98,9 +100,9 @@ class FigurePlot(object):
         self.AxisPlot = self.figure.add_axes([.06, .1, .88, .8])
         self.AxisPlot.set_xlabel(r'thousands of samples')
         self.AxisPlot.set_ylabel(r"g's")
-        self.lines = self.AxisPlot.plot(self.t, self.sensorList[0], self.colorScheme['graphX'],
-                                        self.t, self.sensorList[1], self.colorScheme['graphY'],
-                                        self.t, self.sensorList[2], self.colorScheme['graphZ'])
+        self.lines = self.AxisPlot.plot(self.t, self.axisList[0], self.colorScheme['graphX'],
+                                        self.t, self.axisList[1], self.colorScheme['graphY'],
+                                        self.t, self.axisList[2], self.colorScheme['graphZ'])
 
 
     def hideSubplot(self, identifier):
@@ -128,7 +130,6 @@ class FigurePlot(object):
             item.set_visible(True)
 
         self.figure.canvas.draw()
-
 
 
 #------------------------ External Functions ---------------------------------------------
@@ -161,3 +162,21 @@ def saveFile(sensorDataObject, recentsObject, filename=''):
     file.close()
     recentsObject.add_recent(sfFileName)
     return
+
+def export_to_xlsx(sensorDataObject):
+    filename = fd.asksaveasfilename(filetypes=[("Excel Workbook", "*.xlsx" ),("All files", "*")], defaultextension='.xlsx')
+
+    workbook = xlsxwriter.Workbook(filename)
+    bold = workbook.add_format({'bold' : 1})
+    for sensor, figurePlotObject in enumerate(sensorDataObject.plotList):
+        worksheet = workbook.add_worksheet('Sensor {}'.format(sensor+1))
+        worksheet.write('A1', 'X axis', bold)
+        worksheet.write('B1', 'Y axis', bold)
+        worksheet.write('C1', 'Z axis', bold)
+        for column, axis in enumerate(figurePlotObject.originalAxisList):
+            for row, dataPoint in enumerate(axis):
+                worksheet.write_number(row+1, column, dataPoint)
+
+
+
+

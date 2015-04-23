@@ -59,8 +59,11 @@ class MainApp(Tk):
         fileMenu.config(tearoff=0)
         fileMenu.add_command(label="Import...", command=self.fImportData)
         fileMenu.add_command(label="Open...", command=self.fOpen)
+        fileMenu.add_separator()
         fileMenu.add_command(label="Save As...", command=self.fSaveAs)
         fileMenu.add_command(label="Save", command=self.fSave)
+        fileMenu.add_separator()
+        fileMenu.add_command(label='Export to .xlsx', command=self.fExport)
         fileMenu.add_separator()
         fileMenu.add_command(label="Exit", command=self.fOnExit)
         menuBar.add_cascade(label="File", menu=fileMenu)
@@ -120,6 +123,9 @@ class MainApp(Tk):
         self.save_if_needs_saving()
         self.recentFiles.save_settings()
         sys.exit()
+
+    def fExport(self):
+        sd.export_to_xlsx(sensorData)
 
     #Edit Menu
     def eFilter(self):
