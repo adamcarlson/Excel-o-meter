@@ -163,4 +163,34 @@ class ActuallyWorkingToolbar(NavigationToolbar2TkAgg):
         line.set_data([data[0][i] for i in range(x, num)], [ data[1][i] for i in range(x, num)])
         line.set_3d_properties([data[2][i] for i in range(x, num)])
         return line
+
+
+         self.selectorVar = StringVar(self.parent)
+        self.selectorVar.set("xlsx")
+        om = OptionMenu(self, self.selectorVar, "xlsx")
+        om.configure(font=("Calibri", 16), fg=self.colorScheme['textNormal'], bg=self.colorScheme['bgNormal'])
+        om.grid(row=1, column=0, sticky='nsew')
+
+        self.sensorsVar = IntVar(self.parent)
+        rbAll = Radiobutton(self, text='All', font=("Calibri", 16), selectcolor='#000000', bg=self.colorScheme['bgNormal'], fg=self.colorScheme['textNormal'], variable=self.sensorsVar, value=1, command=self.on_click)
+        rbAll.grid(row=2, column=0, sticky='nsew')
+        rbAll.select()
+        rbSelect = Radiobutton(self, text='Select', font=("Calibri", 16), selectcolor='#000000', bg=self.colorScheme['bgNormal'], fg=self.colorScheme['textNormal'], variable=self.sensorsVar, value=2, command=self.on_click)
+        rbSelect.grid(row=3, column=0, sticky='nsew')
+
+        self.sensorList = [IntVar(self.parent) for i in range(3)]
+        self.checkButtons = [Checkbutton(self, text='sensor {}'.format(i+1), font=("Calibri", 16), bg=self.colorScheme['bgNormal'], fg=self.colorScheme['textNormal'], variable=self.sensorList[i], state=DISABLED) for i in range(3)]
+        for i, button in enumerate(self.checkButtons):
+            button.grid(row=i+4, column=0, sticky='nsew')
+
+        self.HzList = IntVar(self.parent)
+        self.HzRadioList = [Radiobutton(self, text='{} Hz'.format(int(pow(2, 3-i)*100)), font=("Calibri", 16), bg=self.colorScheme['bgNormal'], fg=self.colorScheme['textNormal'], variable=self.HzList, value=i) for i in range(4)]
+        for i, item in enumerate(self.HzRadioList):
+            item.grid(row=i, column=2, sticky='nsew')
+
+        Button(self, text="Export", font=("Calibri", 16), bg=self.colorScheme['bgNormal'], fg=self.colorScheme['textNormal'], command=self.export).grid(row=4, column=2, sticky='nsew')
+
+
+
+
 '''

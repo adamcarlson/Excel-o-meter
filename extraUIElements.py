@@ -165,7 +165,7 @@ class ToggleButtonFrame(Frame):
                                     dcCommand=self.doubleClickCommand, height=1, pressed=self.figureClass.toggled[2])
         self.zButton.grid(row=0, column=6, sticky='nsew')
 
-        LinkButton(self, 'Add Filter', self.sensorData.filter, self.colorScheme).grid(row=0, column=8, sticky='nsew')
+        LinkButton(self, 'Add Filter', self.parent.filterGraph, self.colorScheme).grid(row=0, column=8, sticky='nsew')
 
     def show_all(self):
         self.figureClass.show_all()
@@ -243,7 +243,7 @@ class TabFrame(Frame):
         if hasattr(self, 'currentFrame'):
             self.currentFrame.kill()
             self.currentFrame.pack_forget()
-        self.currentFrame = displayFrame(self.contentFrame, sensor)
+        self.currentFrame = displayFrame(self.contentFrame, sensor, self)
         self.currentFrame.pack(side=TOP, fill=BOTH, expand=1)#, padx=10, pady=10)
 
     def kill(self):

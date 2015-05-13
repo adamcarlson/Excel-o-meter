@@ -125,7 +125,7 @@ class MainApp(Tk):
         sys.exit()
 
     def fExport(self):
-        sd.export_to_xlsx(sensorData)
+        sd.export_options(sensorData, colors)
 
     #Edit Menu
     def eFilter(self):
@@ -243,9 +243,10 @@ class NoteView(Frame):
             sensorData.saved[1] = False
 
 class SensorView(Frame):
-    def __init__(self, parent, sensor):
+    def __init__(self, parent, sensor, tabFrame):
         self.parent = parent
         self.sensorNum = sensor - 1
+        self.tabFrame = tabFrame
         Frame.__init__(self, self.parent, bg=colors['bgSecondary'])
         self.initUI()
         self.rowconfigure(0, weight=1)
@@ -274,8 +275,11 @@ class SensorView(Frame):
     def changePlot(self, plot):
         pass
 
-    def filterGraph(self, itemNum):
-        pass
+    def filterGraph(self):
+        popup = Tk()
+        popup.title('Moving Average Vector Length')
+        sd.FilterWindow(popup, sensorData, colors, self).pack()
+        sensorData.saved[1] = False
 
     def kill(self):
         self.buttons.kill()

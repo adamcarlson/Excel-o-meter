@@ -53,6 +53,7 @@ int main(int argc, char *argv[]){
 	//oldDP = (__int16 *)malloc(6);
 	//__int16 *bufPtr;
 	float newData[3];
+	__int8 info[16];
 
 	int sensor;
 	
@@ -63,24 +64,46 @@ int main(int argc, char *argv[]){
 	FILE *outputFile;
 
 	fopen_s(&inputFile, argv[1], "rb");
-	fopen_s(&s0, "s0.dat", "wb");
-	//fopen_s(&s1, "s1.dat", "wb");
+	fread_s(info, 16, 1, 16, inputFile);
+	__int8 numSensors = info[0];
+	fprintf(stdout, "%i", numSensors);
 
-	while (fread_s(dataPoint, 6, 2, 3, inputFile))
+	if (numSensors > 0)
+		fopen_s(&s0, "s0.dat", "wb");
+	if (numSensors > 1)
+		fopen_s(&s1, "s1.dat", "wb");
+	if (numSensors > 2)
+		fopen_s(&s2, "s2.dat", "wb");
+
+	while (fread_s(info, 16, 1, 16, inputFile))
 	{
-		for (int i = 0; i < 3; i++)
+		sensor = info[0];
+
+		if (sensor == 0)
+			outputFile = s0;
+		else if (sensor == 1)
+			outputFile = s1;
+		else if (sensor == 2)
+			outputFile = s2;
+
+
+		for (int i = 0; i < 32; i++)
 		{
-			dataPoint[i] = byteSwap(dataPoint[i]);
+			fread_s(dataPoint, 6, 2, 3, inputFile);
+			/*for (int i = 0; i < 3; i++)
+			{
+				dataPoint[i] = byteSwap(dataPoint[i]);
+			}*/
+
+			// convert to g's
+			newData[0] = ((float)(dataPoint[0] >> 2)) / 1024.0;
+			newData[1] = ((float)(dataPoint[1] >> 2)) / 1024.0;
+			newData[2] = ((float)(dataPoint[2] >> 2)) / 1024.0;
+
+			if (!(sensor > 2))
+				fwrite(newData, sizeof(float), 3, outputFile);
 		}
-		sensor = sensorCheck(dataPoint[0]);
-
-		
-		// For REAL data:
-		newData[0] = ((float)(dataPoint[0] >> 2)) / 1024.0;
-		newData[1] = ((float)(dataPoint[1] >> 2)) / 1024.0;
-		newData[2] = ((float)(dataPoint[2] >> 2)) / 1024.0;
-		
-
+	}
 		/*
 		// For TEST data:
 		dataPoint[0] = dataPoint[0] >> 4;
@@ -91,19 +114,6 @@ int main(int argc, char *argv[]){
 		newData[1] = (float)dataPoint[1];
 		newData[2] = (float)dataPoint[2];
 		*/
-
-		//outputToScreen(newData, sensor);
-
-		//if (sensor == 0)
-			outputFile = s0;
-		/*else if (sensor == 1)
-			outputFile = s1;
-		else
-			outputFile = s2;*/
-
-		fwrite(newData, sizeof(float), 3, outputFile);
-	}
-	fprintf(stdout, "1");
 
 	/*
 	while (fread_s(dataPoint, 6, 2, 3, inputFile)){
@@ -138,6 +148,10 @@ int main(int argc, char *argv[]){
 	*/
 
 	fclose(inputFile);
-	fclose(s0);
-	//fclose(s1);
+	if (numSensors > 0)
+		fclose(s0);
+	if (numSensors > 1)
+		fclose(s1);
+	if (numSensors > 2)
+		fclose(s2);
 }
