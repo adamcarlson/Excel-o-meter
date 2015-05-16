@@ -227,7 +227,7 @@ class RunView(Frame):
         self.content.kill()
 
 class NoteView(Frame):
-    def __init__(self, parent, junk=0):
+    def __init__(self, parent, *args):
         self.parent = parent
         Frame.__init__(self, self.parent, bg=colors['bgNormal'])
         self.initUI()

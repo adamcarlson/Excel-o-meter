@@ -29,6 +29,7 @@ class SensorData(object):
         else:
             self.filename = filename
             self.runData['runTitle'] = self.filename.split('.')[0].split('\\')[-1]
+
         if self.filename.split('.')[-1] == 'sac':
             self.numberOfSensors = self.runUnpacker(self.filename)
             record_dtype = np.dtype([('x_data', np.float32), ('y_data', np.float32), ('z_data', np.float32)])
@@ -87,19 +88,30 @@ class SensorData(object):
         self.intervalCount = count
         return self.intervalCount
 
-    def filter(self, N):
-        for item in self.plotList:
-            for i, axis in enumerate(item.axisList):
-                item.axisList[i] = runningMean(axis, N)
-            item.makePlots()
+    def reset(self, sensorNum):
+        item = self.plotList[sensorNum]
+        for i, axis in enumerate(item.axisList):
+            item.axisList[i] = np.copy(item.originalAxisList[i])
+        item.makePlots()
+
+    def filter(self, N, sensorNum):
+        item = self.plotList[sensorNum]
+        for i, axis in enumerate(item.axisList):
+            item.axisList[i] = runningMean(axis, N)
+        item.makePlots()
 
 def runningMean(x, N):
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
+    y = np.copy(x)
+    return np.convolve(y, np.ones((N,))/N)[(N-1):]
 
 class FigurePlot(object):
     def __init__(self, axisList, t, colorScheme):
-        self.originalAxisList = axisList
-        self.axisList = axisList
+        self.originalAxisList = []
+        self.axisList = []
+        for item in axisList:
+            self.originalAxisList.append(np.copy(item))
+            self.axisList.append(np.copy(item))
+
         self.t = t
         self.colorScheme = colorScheme
         self.makePlots()
@@ -376,16 +388,21 @@ class FilterWindow(Frame):
         self.initUI()
 
     def initUI(self):
-        Label(self, text='Select a moving average vector length', bg=self.colorScheme['bgNormal'], width=30, fg=self.colorScheme['textNormal'], font=("Calibri", 16)).grid(row=0, column=0, sticky='nsew')
+        Label(self, text='Select a moving average vector length', bg=self.colorScheme['bgNormal'], width=30, fg=self.colorScheme['textNormal'], font=("Calibri", 16)).grid(row=0, column=0, columnspan=2, sticky='nsew')
 
         self.vector = Scale(self, from_=2, to=100, orient=HORIZONTAL, fg=self.colorScheme['textNormal'], bg=self.colorScheme['bgNormal'], bd=0, highlightthickness=0, activebackground=self.colorScheme['bgNormal'])
-        self.vector.grid(row=1, column=0, sticky='nsew', padx=4)
+        self.vector.grid(row=1, column=0, sticky='nsew', padx=4, columnspan=2)
 
-        LinkButton(self, 'Filter', self.filter, self.colorScheme).grid(row=2, column=0, sticky='nsew')
+        LinkButton(self, 'Reset Graph', self.reset, self.colorScheme).grid(row=2, column=0, sticky='nsew')
+        LinkButton(self, 'Filter', self.filter, self.colorScheme).grid(row=2, column=1, sticky='nsew')
 
+    def reset(self):
+        self.sensorDataObject.reset(self.mainApp.sensorNum)
+        self.mainApp.tabFrame.changeTabs(self.mainApp.tabFrame.tabButtons[self.mainApp.sensorNum+1])
+        self.parent.destroy()
 
     def filter(self):
-        self.sensorDataObject.filter(self.vector.get())
+        self.sensorDataObject.filter(self.vector.get(), self.mainApp.sensorNum)
         self.mainApp.tabFrame.changeTabs(self.mainApp.tabFrame.tabButtons[self.mainApp.sensorNum+1])
         self.parent.destroy()
 
