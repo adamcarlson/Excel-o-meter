@@ -15,7 +15,7 @@ from math import pow
 from extraUIElements import TabButton, ToggleButton, LinkButton
 
 class SensorData(object):
-    def __init__(self, colorScheme, numberOfSensors = 3, Hz=800):
+    def __init__(self, colorScheme, numberOfSensors = 3, Hz=400):
         self.interval = 1/Hz
         self.numberOfSensors = numberOfSensors
         self.colorScheme = colorScheme
@@ -42,7 +42,7 @@ class SensorData(object):
             self.plotList = [FigurePlot(item, self.t, self.colorScheme) for item in self.data]
 
             self.runData['runFileLocation'] = self.runData['runTitle'] + '.esf'
-            self.runData['runTime'] = str(timedelta(milliseconds=(self.intervalCount * self.interval)))
+            self.runData['runTime'] = str(timedelta(seconds=(self.intervalCount * self.interval)))
             self.runData['runDate'] = datetime.now().strftime('%Y-%m-%d')
             self.runData['runTimeMS'] = self.intervalCount * self.interval
             self.runData['runNotes'] = ''
@@ -120,7 +120,7 @@ class FigurePlot(object):
     def makePlots(self):
         self.figure = plt.figure(figsize=(1,1), dpi=100, frameon=False, facecolor=self.colorScheme['graphBg'])
         self.AxisPlot = self.figure.add_axes([.06, .1, .88, .8])
-        self.AxisPlot.set_xlabel(r'thousands of samples')
+        self.AxisPlot.set_xlabel(r'Seconds')
         self.AxisPlot.set_ylabel(r"g's")
         self.lines = self.AxisPlot.plot(self.t, self.axisList[0], self.colorScheme['graphX'],
                                         self.t, self.axisList[1], self.colorScheme['graphY'],

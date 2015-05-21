@@ -90,17 +90,18 @@ int main(int argc, char *argv[]){
 		for (int i = 0; i < 32; i++)
 		{
 			fread_s(dataPoint, 6, 2, 3, inputFile);
+			/*
 			for (int i = 0; i < 3; i++)
 			{
 				dataPoint[i] = byteSwap(dataPoint[i]);
-			}
+			}*/
 
 			// convert to g's
 			newData[0] = ((float)(dataPoint[0] >> 2)) / 1024.0;
 			newData[1] = ((float)(dataPoint[1] >> 2)) / 1024.0;
 			newData[2] = ((float)(dataPoint[2] >> 2)) / 1024.0;
 
-			if (!(sensor > 2))
+			if (info[1] == 0x00)
 				fwrite(newData, sizeof(float), 3, outputFile);
 		}
 	}
