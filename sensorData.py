@@ -38,6 +38,8 @@ class SensorData(object):
 
             self.truncateToShortest()
             self.t = np.arange(0.0,(self.intervalCount*self.interval),self.interval)
+            self.t = self.t[0:self.intervalCount]
+
 
             self.plotList = [FigurePlot(item, self.t, self.colorScheme) for item in self.data]
 
